@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Checking Account</h1>
+  <p><strong>Member ID:</strong> {{ member.member_id }}</p>
+  <p><strong>Account type:</strong> Checking</p>
+  <p><strong>Account status:</strong> {{ account.status }}</p>
+  <p><strong>Current balance:</strong> {{ formatted_balance }}</p>
+  <p><strong>Currency:</strong> {{ account.currency }}</p>
+  <a class="button-link" href="{{ url_for('member_details', member_id=member.member_id) }}" target="work-area">Close</a>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Member Details</h1>
+  <p><strong>Member ID:</strong> <span id="member-identity">{{ member.member_id }}</span></p>
+  <p><strong>Name:</strong> {{ member.name }}</p>
+  <p><strong>Status:</strong> {{ member.status }}</p>
+
+  <h2>Accounts</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Account Type</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Savings</td>
+        <td>{{ member.get_account('savings').status }}</td>
+        <td><a class="button-link" href="{{ savings_url }}" target="work-area">Open</a></td>
+      </tr>
+      <tr>
+        <td>Checking</td>
+        <td>{{ member.get_account('checking').status }}</td>
+        <td><a class="button-link" href="{{ checking_url }}" target="work-area">Open</a></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Risk Simulation</h2>
+  <form method="post" action="{{ risky_action_url }}" target="work-area">
+    <button type="submit">Delete member</button>
+  </form>
+{% endblock %}

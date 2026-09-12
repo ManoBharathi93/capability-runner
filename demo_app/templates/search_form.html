@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Member Search</h1>
+  <form method="post" action="{{ search_url }}" target="work-area">
+    <label for="member_id">Member ID</label>
+    <input id="member_id" name="member_id" type="text" maxlength="16" autocomplete="off">
+    <button type="submit">Search</button>
+  </form>
+  <p class="muted">Enter a member ID to view search results.</p>
+{% endblock %}

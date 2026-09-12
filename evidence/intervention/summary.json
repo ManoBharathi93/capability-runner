@@ -1,0 +1,23 @@
+{
+  "artifact_file": null,
+  "balance_minor_units": 98765,
+  "blocked_action": "member.accounts.savings",
+  "browser_action_count": 4,
+  "builder_model_calls": 0,
+  "capability_id": "lookup_savings_balance",
+  "capability_version": "1.0.0",
+  "currency": "USD",
+  "demo_kind": "intervention",
+  "discovery_model_calls": 0,
+  "evidence_file": "evidence.jsonl",
+  "generation_after": 3,
+  "generation_before": 0,
+  "operator_mode": "automated_http",
+  "repeated_automation_side_effects": false,
+  "replay_model_calls": 0,
+  "replay_result": "SUCCESS",
+  "run_id": "intervention-fa70344b2855484b831836b4e7c3d3ca",
+  "same_surface_session": true,
+  "schema_version": 1,
+  "status": "SUCCESS"
+}

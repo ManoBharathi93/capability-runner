@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Search Results</h1>
+  <div class="muted">1 matching member</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Member ID</th>
+        <th>Member Name</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ member.member_id }}</td>
+        <td>{{ member.name }}</td>
+        <td>{{ member.status }}</td>
+        <td><a class="button-link" href="{{ member_details_url }}" target="work-area">Open</a></td>
+      </tr>
+    </tbody>
+  </table>
+{% endblock %}

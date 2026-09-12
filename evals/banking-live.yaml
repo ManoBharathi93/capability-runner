@@ -1,0 +1,32 @@
+{
+  "name": "banking-live",
+  "live": true,
+  "cases": [
+    {
+      "id": "corebank-live",
+      "application": "corebank-known",
+      "goal": "Open member 67890 and tell me how much is in their Savings account.",
+      "setup": "normal",
+      "expected_classification": "SUCCESS",
+      "expected_outputs": {
+        "balance_minor_units": 438221,
+        "currency": "USD"
+      },
+      "profile_preexisting": true,
+      "generated_profile_expected": false
+    },
+    {
+      "id": "bank-b-live",
+      "application": "bank-b",
+      "goal": "Find the savings balance for customer 67890.",
+      "setup": "normal",
+      "expected_classification": "SUCCESS",
+      "expected_outputs": {
+        "balance_minor_units": 438221,
+        "currency": "USD"
+      },
+      "profile_preexisting": false,
+      "generated_profile_expected": true
+    }
+  ]
+}

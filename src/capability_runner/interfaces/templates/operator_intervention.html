@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Human intervention</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17212b;
+      --muted: #61707d;
+      --paper: #f4f6f4;
+      --surface: #ffffff;
+      --line: #d7deda;
+      --navy: #17324d;
+      --blue: #2367a8;
+      --green: #16705a;
+      --amber: #9a6400;
+      --red: #a13b35;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image: linear-gradient(rgba(23, 50, 77, 0.035) 1px, transparent 1px);
+      background-size: 100% 28px;
+      font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+    }
+
+    button, input { font: inherit; }
+
+    .shell { max-width: 1440px; margin: 0 auto; padding: 28px; }
+
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      padding-bottom: 22px;
+      border-bottom: 2px solid var(--navy);
+    }
+
+    h1, h2 { font-family: Georgia, "Times New Roman", serif; font-weight: 600; }
+    h1 { margin: 0; font-size: 30px; }
+    h2 { margin: 0 0 14px; font-size: 19px; }
+
+    .reason { max-width: 760px; margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
+    .status { padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-weight: 700; }
+    .status.operator_controlled { color: var(--green); border-color: #8cc7b8; }
+    .status.resume_requested { color: var(--amber); border-color: #dabb7b; }
+    .status.terminal { color: var(--red); border-color: #d8a19d; }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 16px; color: var(--muted); font-size: 13px; }
+    .meta strong { color: var(--ink); }
+
+    main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 22px; padding-top: 22px; }
+    section, aside { min-width: 0; }
+
+    .preview-frame {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border: 1px solid #abb7b1;
+      border-radius: 6px;
+      background: #20272d;
+    }
+
+    .preview-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .preview-empty { position: absolute; inset: 0; display: grid; place-items: center; color: #dce4e0; }
+
+    .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .controls { display: grid; gap: 12px; }
+    .control { padding: 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+    .control label { display: block; margin-bottom: 7px; font-weight: 700; }
+    .semantic { display: block; margin-top: 5px; color: var(--muted); font: 11px Consolas, monospace; overflow-wrap: anywhere; }
+    .fill-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-top: 10px; }
+    input { min-width: 0; border: 1px solid #9eaaa4; border-radius: 4px; padding: 9px 10px; color: var(--ink); background: #fff; }
+
+    button { border: 1px solid transparent; border-radius: 5px; padding: 9px 12px; cursor: pointer; font-weight: 700; }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
+    .primary { color: #fff; background: var(--blue); }
+    .secondary { color: var(--navy); background: #e7edf1; border-color: #bdc9d0; }
+    .danger { color: var(--red); background: #fff; border-color: #d8a19d; }
+    .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .message { min-height: 22px; margin-top: 14px; color: var(--muted); font-size: 13px; }
+    .message.error { color: var(--red); }
+
+    @media (max-width: 860px) {
+      .shell { padding: 18px; }
+      header { display: grid; }
+      main { grid-template-columns: 1fr; }
+      aside { order: -1; }
+    }
+  </style>
+</head>
+<body data-intervention-id="{{ intervention_id|e }}">
+  <div class="shell">
+    <header>
+      <div>
+        <h1>Human intervention</h1>
+        <p class="reason" id="reason">Loading intervention…</p>
+        <div class="meta">
+          <span>Intervention <strong id="intervention-id"></strong></span>
+          <span>Generation <strong id="generation">—</strong></span>
+          <span>Surface <strong id="surface-kind">—</strong></span>
+        </div>
+      </div>
+      <div class="status" id="status">Loading</div>
+    </header>
+
+    <main>
+      <section aria-labelledby="browser-view-title">
+        <div class="toolbar">
+          <h2 id="browser-view-title">Current browser view</h2>
+          <button class="secondary" id="refresh" type="button">Refresh</button>
+        </div>
+        <div class="preview-frame">
+          <div class="preview-empty" id="preview-empty">View unavailable</div>
+          <img id="browser-view" alt="Current live browser session" hidden>
+        </div>
+      </section>
+
+      <aside aria-labelledby="controls-title">
+        <h2 id="controls-title">Available actions</h2>
+        <div class="controls" id="controls"></div>
+        <div class="actions">
+          <button class="primary" id="return-control" type="button">Return control</button>
+          <button class="danger" id="stop-session" type="button">Stop session</button>
+        </div>
+        <div class="message" id="message" role="status" aria-live="polite"></div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const interventionId = document.body.dataset.interventionId;
+    const base = `/api/interventions/${encodeURIComponent(interventionId)}`;
+    const statusNode = document.getElementById("status");
+    const controlsNode = document.getElementById("controls");
+    const messageNode = document.getElementById("message");
+    const imageNode = document.getElementById("browser-view");
+    const emptyNode = document.getElementById("preview-empty");
+    let currentState = null;
+
+    function showMessage(text, isError = false) {
+      messageNode.textContent = text;
+      messageNode.classList.toggle("error", isError);
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(`${base}${path}`, options);
+      const payload = response.headers.get("content-type")?.includes("application/json")
+        ? await response.json()
+        : null;
+      if (!response.ok) {
+        throw new Error(payload?.error?.summary || payload?.summary || "Request failed.");
+      }
+      return payload;
+    }
+
+    async function refreshStatus() {
+      const status = await api("");
+      currentState = status.control_state;
+      document.getElementById("reason").textContent = status.reason;
+      document.getElementById("intervention-id").textContent = status.intervention_id;
+      document.getElementById("generation").textContent = String(status.generation);
+      document.getElementById("surface-kind").textContent = status.surface_kind;
+      statusNode.textContent = status.state_label;
+      statusNode.className = `status ${status.control_state}`;
+      const operatorOwns = status.control_state === "operator_controlled";
+      document.getElementById("return-control").disabled = !operatorOwns;
+      document.getElementById("stop-session").disabled = status.control_state === "terminal";
+      return operatorOwns;
+    }
+
+    function refreshView() {
+      if (currentState !== "operator_controlled") {
+        imageNode.hidden = true;
+        emptyNode.hidden = false;
+        return;
+      }
+      imageNode.onload = () => { imageNode.hidden = false; emptyNode.hidden = true; };
+      imageNode.onerror = () => { imageNode.hidden = true; emptyNode.hidden = false; };
+      imageNode.src = `${base}/view?t=${Date.now()}`;
+    }
+
+    async function submitAction(control, value) {
+      const body = { semantic_target: control.semantic_target, action_kind: control.action_kind };
+      if (control.action_kind === "fill") body.value = value;
+      const result = await api("/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      showMessage(result.summary);
+      await refresh();
+    }
+
+    async function refreshControls() {
+      controlsNode.replaceChildren();
+      if (currentState !== "operator_controlled") return;
+      const payload = await api("/controls");
+      for (const control of payload.controls) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "control";
+        const label = document.createElement("label");
+        label.textContent = control.label;
+        const semantic = document.createElement("span");
+        semantic.className = "semantic";
+        semantic.textContent = control.semantic_target;
+        wrapper.append(label, semantic);
+
+        if (control.action_kind === "click") {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "primary";
+          button.textContent = control.label;
+          button.addEventListener("click", () => submitAction(control));
+          wrapper.append(button);
+        } else {
+          const row = document.createElement("div");
+          row.className = "fill-row";
+          const input = document.createElement("input");
+          input.type = control.sensitive ? "password" : "text";
+          input.autocomplete = "off";
+          input.setAttribute("aria-label", control.label);
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "primary";
+          button.textContent = "Submit";
+          button.addEventListener("click", async () => {
+            const value = input.value;
+            input.value = "";
+            await submitAction(control, value);
+          });
+          row.append(input, button);
+          wrapper.append(row);
+        }
+        controlsNode.append(wrapper);
+      }
+    }
+
+    async function refresh() {
+      try {
+        await refreshStatus();
+        await refreshControls();
+        refreshView();
+      } catch (error) {
+        showMessage(error.message, true);
+      }
+    }
+
+    document.getElementById("refresh").addEventListener("click", refresh);
+    document.getElementById("return-control").addEventListener("click", async () => {
+      showMessage("Returning control…");
+      try {
+        const result = await api("/return-control", { method: "POST" });
+        showMessage(result.summary);
+        await refresh();
+      } catch (error) { showMessage(error.message, true); }
+    });
+    document.getElementById("stop-session").addEventListener("click", async () => {
+      try {
+        const result = await api("/stop", { method: "POST" });
+        showMessage(result.summary);
+        await refresh();
+      } catch (error) { showMessage(error.message, true); }
+    });
+
+    refresh();
+    setInterval(() => { if (currentState === "operator_controlled") refresh(); }, 1500);
+  </script>
+</body>
+</html>

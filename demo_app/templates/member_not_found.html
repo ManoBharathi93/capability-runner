@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Member Search</h1>
+  <div id="member-not-found" class="alert">No member found for the supplied Member ID.</div>
+  <p>Member ID: {{ member_id }}</p>
+  <a class="button-link" href="{{ url_for('search_members') }}" target="work-area">Back to search</a>
+{% endblock %}

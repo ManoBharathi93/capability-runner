@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title or "Northstar Member Services" }}</title>
+  <style>
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #eef2f6; color: #1e2933; }
+    header { background: #2d4154; color: #f5f7fa; padding: 12px 18px; border-bottom: 4px solid #8ea3b7; }
+    .page { padding: 18px; }
+    .panel { background: #fff; border: 1px solid #b8c4cf; padding: 14px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #98a9b7; padding: 8px; text-align: left; }
+    th { background: #d9e1e8; }
+    form { margin: 0; }
+    label { display: block; margin-bottom: 4px; font-weight: bold; }
+    input[type="text"] { padding: 6px 8px; width: 240px; border: 1px solid #95a5b2; }
+    button, .button-link { display: inline-block; padding: 6px 10px; border: 1px solid #7b8c9d; background: #d8e0e7; color: #1f2d3a; text-decoration: none; cursor: pointer; }
+    .muted { color: #5a6a79; }
+    .alert { background: #f8f1cc; border: 1px solid #c9b86f; padding: 10px; margin-top: 12px; }
+    .danger { background: #fde7e8; border: 1px solid #d48b90; padding: 10px; }
+    .grid { display: grid; gap: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Northstar Member Services</strong>
+    <div>Legacy Back Office</div>
+  </header>
+  <div class="page">
+    <div class="panel">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</body>
+</html>

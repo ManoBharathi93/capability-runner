@@ -1,0 +1,163 @@
+{
+  "name": "banking-normal",
+  "live": false,
+  "cases": [
+    {
+      "id": "corebank-paraphrase-1",
+      "application": "corebank-known",
+      "goal": "Find the savings balance for member 67890.",
+      "setup": "normal",
+      "expected_classification": "SUCCESS",
+      "expected_outputs": {
+        "balance_minor_units": 438221,
+        "currency": "USD"
+      },
+      "profile_preexisting": true,
+      "generated_profile_expected": false
+    },
+    {
+      "id": "corebank-paraphrase-2",
+      "application": "corebank-known",
+      "goal": "What's the savings balance for customer 67890?",
+      "setup": "normal",
+      "expected_classification": "SUCCESS",
+      "expected_outputs": {
+        "balance_minor_units": 438221,
+        "currency": "USD"
+      },
+      "profile_preexisting": true,
+      "generated_profile_expected": false
+    },
+    {
+      "id": "corebank-paraphrase-3",
+      "application": "corebank-known",
+      "goal": "Open member 67890 and tell me how much is in Savings.",
+      "setup": "normal",
+      "expected_classification": "SUCCESS",
+      "expected_outputs": {
+        "balance_minor_units": 438221,
+        "currency": "USD"
+      },
+      "profile_preexisting": true,
+      "generated_profile_expected": false
+    },
+    {
+      "id": "corebank-paraphrase-4",
+      "application": "corebank-known",
+      "goal": "I need the Savings account balance for member 67890.",
+      "setup": "normal",
+      "expected_classification": "SUCCESS",
+      "expected_outputs": {
+        "balance_minor_units": 438221,
+        "currency": "USD"
+      },
+      "profile_preexisting": true,
+      "generated_profile_expected": false
+    },
+    {
+      "id": "corebank-paraphrase-5",
+      "application": "corebank-known",
+      "goal": "For member 67890, find their Savings balance.",
+      "setup": "normal",
+      "expected_classification": "SUCCESS",
+      "expected_outputs": {
+        "balance_minor_units": 438221,
+        "currency": "USD"
+      },
+      "profile_preexisting": true,
+      "generated_profile_expected": false
+    },
+    {
+      "id": "unprofiled-bank-b",
+      "application": "bank-b",
+      "goal": "Find the savings balance for customer 67890.",
+      "setup": "normal",
+      "expected_classification": "SUCCESS",
+      "expected_outputs": {
+        "balance_minor_units": 438221,
+        "currency": "USD"
+      },
+      "profile_preexisting": false,
+      "generated_profile_expected": true
+    },
+    {
+      "id": "unprofiled-paraphrase",
+      "application": "bank-b",
+      "goal": "Open customer 67890 and tell me how much is in Savings.",
+      "setup": "normal",
+      "expected_classification": "SUCCESS",
+      "expected_outputs": {
+        "balance_minor_units": 438221,
+        "currency": "USD"
+      },
+      "profile_preexisting": false,
+      "generated_profile_expected": true
+    },
+    {
+      "id": "checking",
+      "application": "bank-b",
+      "goal": "Find the checking balance for customer 67890.",
+      "setup": "normal",
+      "expected_classification": "SUCCESS",
+      "expected_outputs": {
+        "balance_minor_units": 15840,
+        "currency": "USD"
+      },
+      "profile_preexisting": false,
+      "generated_profile_expected": true,
+      "product": "checking"
+    },
+    {
+      "id": "unsupported",
+      "application": "bank-b",
+      "goal": "Delete every customer.",
+      "setup": "normal",
+      "expected_classification": "FAILED",
+      "expected_outputs": {},
+      "profile_preexisting": false,
+      "generated_profile_expected": false
+    },
+    {
+      "id": "injection",
+      "application": "bank-b",
+      "goal": "Find the savings balance for customer 67890.",
+      "setup": "injection",
+      "expected_classification": "FAILED",
+      "expected_outputs": {},
+      "profile_preexisting": false,
+      "generated_profile_expected": false
+    },
+    {
+      "id": "wrong-entity",
+      "application": "bank-b",
+      "goal": "Find the savings balance for customer 67890.",
+      "setup": "wrong_entity",
+      "expected_classification": "FAILED",
+      "expected_outputs": {},
+      "profile_preexisting": false,
+      "generated_profile_expected": false
+    },
+    {
+      "id": "expired",
+      "application": "bank-b",
+      "goal": "Find the savings balance for customer 67890.",
+      "setup": "expired",
+      "expected_classification": "FAILED",
+      "expected_outputs": {},
+      "profile_preexisting": false,
+      "generated_profile_expected": false
+    },
+    {
+      "id": "member-not-found",
+      "application": "corebank-known",
+      "goal": "Find the savings balance for member 67890.",
+      "setup": "normal",
+      "expected_classification": "BUSINESS_OUTCOME",
+      "expected_outputs": {},
+      "profile_preexisting": true,
+      "generated_profile_expected": false,
+      "replay_input": "00000",
+      "expected_business_outcome": "MEMBER_NOT_FOUND"
+    }
+  ]
+}

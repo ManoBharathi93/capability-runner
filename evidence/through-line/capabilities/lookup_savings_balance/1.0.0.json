@@ -1,0 +1,156 @@
+{
+  "application_requirement": {
+    "application_family": "corebank",
+    "compatible_variant": null,
+    "surface_kind": "browser"
+  },
+  "business_outcomes": [
+    {
+      "code": "MEMBER_NOT_FOUND",
+      "conditions": [
+        {
+          "kind": "target_visible",
+          "target": {
+            "value": "member.search.not_found"
+          }
+        }
+      ],
+      "description": "The requested member was not found."
+    }
+  ],
+  "capability_id": "lookup_savings_balance",
+  "capability_version": "1.0.0",
+  "description": "Find a member savings account and return its balance.",
+  "inputs": [
+    {
+      "max_length": null,
+      "min_length": null,
+      "name": "member_id",
+      "pattern": null,
+      "required": true,
+      "sensitive": true,
+      "value_type": "STRING"
+    }
+  ],
+  "name": "Lookup savings balance",
+  "outputs": [
+    {
+      "name": "balance_minor_units",
+      "source": {
+        "kind": "target_text",
+        "parser": "currency_minor_units",
+        "target": {
+          "value": "member.account.balance"
+        }
+      },
+      "value_type": "INTEGER"
+    },
+    {
+      "name": "currency",
+      "source": {
+        "kind": "target_text",
+        "parser": "currency_code",
+        "target": {
+          "value": "member.account.balance"
+        }
+      },
+      "value_type": "CURRENCY_CODE"
+    }
+  ],
+  "schema_version": 1,
+  "steps": [
+    {
+      "action": {
+        "kind": "fill",
+        "target": {
+          "value": "member.search.member_id"
+        },
+        "value": {
+          "kind": "input",
+          "name": "member_id"
+        }
+      },
+      "kind": "action",
+      "postcondition": null,
+      "precondition": null,
+      "retry_policy": null,
+      "step_id": "fill_member_search_member_id"
+    },
+    {
+      "action": {
+        "kind": "click",
+        "target": {
+          "value": "member.search.submit"
+        }
+      },
+      "kind": "action",
+      "postcondition": {
+        "kind": "target_visible",
+        "target": {
+          "value": "member.results.open"
+        }
+      },
+      "precondition": null,
+      "retry_policy": {
+        "delay_ms": 400,
+        "kind": "wait_and_retry",
+        "max_attempts": 3
+      },
+      "step_id": "click_member_search_submit"
+    },
+    {
+      "action": {
+        "kind": "click",
+        "target": {
+          "value": "member.results.open"
+        }
+      },
+      "kind": "action",
+      "postcondition": null,
+      "precondition": null,
+      "retry_policy": null,
+      "step_id": "click_member_results_open"
+    },
+    {
+      "action": {
+        "kind": "click",
+        "target": {
+          "value": "member.accounts.savings"
+        }
+      },
+      "kind": "action",
+      "postcondition": null,
+      "precondition": null,
+      "retry_policy": null,
+      "step_id": "click_member_accounts_savings"
+    }
+  ],
+  "success_conditions": [
+    {
+      "expected": {
+        "kind": "input",
+        "name": "member_id"
+      },
+      "kind": "target_text_equals",
+      "target": {
+        "value": "member.details.identity"
+      }
+    },
+    {
+      "expected": {
+        "kind": "literal",
+        "value": "Savings"
+      },
+      "kind": "target_text_equals",
+      "target": {
+        "value": "member.account.type"
+      }
+    },
+    {
+      "kind": "target_visible",
+      "target": {
+        "value": "member.account.balance"
+      }
+    }
+  ]
+}

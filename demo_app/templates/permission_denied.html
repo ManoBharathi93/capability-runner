@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Permission Denied</h1>
+  <div class="danger">You do not have permission to view this account.</div>
+  <p><strong>Member ID:</strong> {{ member.member_id }}</p>
+  <p><strong>Account type:</strong> {{ account.account_type|title }}</p>
+{% endblock %}

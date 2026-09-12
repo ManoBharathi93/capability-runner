@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Northstar Member Services</title>
+  <style>
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #dfe5ea; color: #1e2933; }
+    header { background: #243648; color: #f5f7fa; padding: 16px 20px; border-bottom: 4px solid #95a7b8; }
+    .shell { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 72px); }
+    nav { background: #e7edf2; border-right: 1px solid #b7c2cc; padding: 16px; }
+    nav a { display: block; color: #233243; text-decoration: none; padding: 6px 0; }
+    main { padding: 16px; }
+    iframe { width: 100%; min-height: 760px; border: 1px solid #97a6b5; background: white; }
+    .note { font-size: 0.9rem; color: #526170; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Northstar Member Services</strong>
+    <div>Internal Operations Portal</div>
+  </header>
+  <div class="shell">
+    <nav>
+      <a href="{{ workspace_url }}" target="work-area">Member Search</a>
+      <a href="{{ workspace_url }}" target="work-area">Back Office</a>
+      <a href="{{ workspace_url }}" target="work-area">Account Lookup</a>
+    </nav>
+    <main>
+      <div class="note">Legacy work area</div>
+      <iframe name="work-area" title="work-area" src="{{ workspace_url }}"></iframe>
+    </main>
+  </div>
+</body>
+</html>

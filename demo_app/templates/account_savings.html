@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Savings Account</h1>
+  <p><strong>Member ID:</strong> <span id="member-identity">{{ member.member_id }}</span></p>
+  <p><strong>Account type:</strong> <span id="account-type">Savings</span></p>
+  <p><strong>Account status:</strong> {{ account.status }}</p>
+  <p><strong>Current balance:</strong> <span id="account-balance">{{ formatted_balance }} {{ account.currency }}</span></p>
+  <p><strong>Currency:</strong> {{ account.currency }}</p>
+  <a class="button-link" href="{{ url_for('member_details', member_id=member.member_id) }}" target="work-area">Close</a>
+{% endblock %}

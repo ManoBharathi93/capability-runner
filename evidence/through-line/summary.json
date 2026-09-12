@@ -1,0 +1,26 @@
+{
+  "artifact_checks": {
+    "browser_selectors_embedded": false,
+    "discovery_value_embedded": false,
+    "provider_identity_embedded": false
+  },
+  "artifact_file": "capabilities/lookup_savings_balance/1.0.0.json",
+  "balance_minor_units": 438221,
+  "browser_action_count": 8,
+  "builder_model_calls": 0,
+  "capability_id": "lookup_savings_balance",
+  "capability_version": "1.0.0",
+  "currency": "USD",
+  "demo_kind": "through-line",
+  "discovery_model_calls": 5,
+  "discovery_result": "SUCCESS",
+  "discovery_session_destroyed": true,
+  "evidence_file": "evidence.jsonl",
+  "fresh_replay_session": true,
+  "provider": "gemma",
+  "replay_model_calls": 0,
+  "replay_result": "SUCCESS",
+  "run_id": "through-line-5ac1ab9288ec4b51af36b19fb4aa1808",
+  "schema_version": 1,
+  "status": "SUCCESS"
+}

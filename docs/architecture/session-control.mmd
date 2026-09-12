@@ -1,0 +1,12 @@
+stateDiagram-v2
+    [*] --> AUTOMATION_CONTROLLED
+    AUTOMATION_CONTROLLED --> PAUSE_REQUESTED: intervention requested
+    PAUSE_REQUESTED --> OPERATOR_CONTROLLED: automation quiesced and transfer accepted
+    OPERATOR_CONTROLLED --> RESUME_REQUESTED: operator returns control
+    RESUME_REQUESTED --> AUTOMATION_CONTROLLED: state revalidated and generation advanced
+    AUTOMATION_CONTROLLED --> TERMINAL: complete, failed, cancelled, or timed out
+    OPERATOR_CONTROLLED --> TERMINAL: operator completes or cancels
+    PAUSE_REQUESTED --> TERMINAL: timeout or cancellation
+    TERMINAL --> [*]
+
+%% State names are illustrative pending approval of PDI-001.

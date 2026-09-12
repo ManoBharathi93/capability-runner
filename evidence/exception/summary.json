@@ -1,0 +1,16 @@
+{
+  "artifact_file": null,
+  "browser_action_count": 2,
+  "builder_model_calls": 0,
+  "business_outcome": "MEMBER_NOT_FOUND",
+  "capability_id": "lookup_savings_balance",
+  "capability_version": "1.0.0",
+  "demo_kind": "exception",
+  "discovery_model_calls": 0,
+  "evidence_file": "evidence.jsonl",
+  "replay_model_calls": 0,
+  "replay_result": "BUSINESS_OUTCOME",
+  "run_id": "exception-0c1ac850090a45b887b05e2bf35c2a26",
+  "schema_version": 1,
+  "status": "SUCCESS"
+}

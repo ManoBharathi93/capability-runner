@@ -1,0 +1,111 @@
+{
+  "application_requirement": {
+    "application_family": "corebank",
+    "surface_kind": "browser"
+  },
+  "business_outcomes": [
+    {
+      "code": "MEMBER_NOT_FOUND",
+      "conditions": [
+        {
+          "kind": "target_visible",
+          "target": { "value": "member.search.not_found" }
+        }
+      ],
+      "description": "The requested member was not found."
+    }
+  ],
+  "capability_id": "lookup_savings_balance",
+  "capability_version": "1.0.0",
+  "description": "Find a member savings account and return its balance.",
+  "inputs": [
+    {
+      "name": "member_id",
+      "required": true,
+      "sensitive": true,
+      "value_type": "STRING"
+    }
+  ],
+  "name": "Lookup savings balance",
+  "outputs": [
+    {
+      "name": "balance_minor_units",
+      "source": {
+        "kind": "target_text",
+        "parser": "currency_minor_units",
+        "target": { "value": "member.account.balance" }
+      },
+      "value_type": "INTEGER"
+    },
+    {
+      "name": "currency",
+      "source": {
+        "kind": "target_text",
+        "parser": "currency_code",
+        "target": { "value": "member.account.balance" }
+      },
+      "value_type": "CURRENCY_CODE"
+    }
+  ],
+  "schema_version": 1,
+  "steps": [
+    {
+      "action": {
+        "kind": "fill",
+        "target": { "value": "member.search.member_id" },
+        "value": { "kind": "input", "name": "member_id" }
+      },
+      "kind": "action",
+      "step_id": "enter_member_id"
+    },
+    {
+      "action": {
+        "kind": "click",
+        "target": { "value": "member.search.submit" }
+      },
+      "retry_policy": {
+        "kind": "wait_and_retry",
+        "max_attempts": 3,
+        "delay_ms": 400
+      },
+      "postcondition": {
+        "kind": "target_visible",
+        "target": { "value": "member.results.open" }
+      },
+      "kind": "action",
+      "step_id": "submit_member_search"
+    },
+    {
+      "action": {
+        "kind": "click",
+        "target": { "value": "member.results.open" }
+      },
+      "kind": "action",
+      "step_id": "open_matching_member"
+    },
+    {
+      "action": {
+        "kind": "click",
+        "target": { "value": "member.accounts.savings" }
+      },
+      "kind": "action",
+      "step_id": "open_savings_account"
+    }
+  ],
+  "success_conditions": [
+    {
+      "expected": { "kind": "input", "name": "member_id" },
+      "kind": "target_text_equals",
+      "target": { "value": "member.details.identity" }
+    },
+    {
+      "expected": { "kind": "literal", "value": "Savings" },
+      "kind": "target_text_equals",
+      "target": { "value": "member.account.type" }
+    },
+    {
+      "kind": "target_visible",
+      "target": { "value": "member.account.balance" }
+    }
+  ]
+}

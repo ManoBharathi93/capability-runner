@@ -1,0 +1,36 @@
+flowchart TB
+    interfaces[Command / Thin Web / Operator Interfaces]
+    coordinator[Run Coordinator]
+    discovery[Discovery Engine]
+    replay[Replay Engine]
+    intervention[Intervention Manager]
+    model[Provider-neutral Model Client]
+    providers[OpenAI / Anthropic / hosted Gemma adapters]
+    capability[Builder / Validator / Store]
+    evaluator[Non-LLM State Evaluator]
+    gateway[Action Gateway]
+    policy[Policy Guard]
+    session[Session Controller]
+    surface[Surface Adapter]
+    browser[Async Playwright Browser Adapter]
+    evidence[Sanitized Evidence Recorder]
+
+    interfaces --> coordinator
+    coordinator --> discovery
+    coordinator --> replay
+    coordinator --> intervention
+    discovery --> model --> providers
+    discovery --> capability
+    replay --> capability
+    discovery --> evaluator
+    replay --> evaluator
+    discovery --> gateway
+    replay --> gateway
+    interfaces --> gateway
+    gateway --> policy
+    gateway --> session
+    gateway --> surface --> browser
+    intervention --> session
+    coordinator --> evidence
+    gateway --> evidence
+    intervention --> evidence

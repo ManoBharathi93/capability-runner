@@ -1,0 +1,56 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+
+# Python environments and caches
+.venv/
+.venv*/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.coverage
+htmlcov/
+
+# Packaging and build output
+build/
+dist/
+*.egg-info/
+
+# Frontend dependencies and build output
+node_modules/
+web/dist/
+web/coverage/
+*.tsbuildinfo
+web/vite.config.js
+web/vite.config.d.ts
+
+# Local runtime state and sensitive browser material
+var/
+playwright/.auth/
+browser-profiles/
+**/cookies.json
+**/storage-state.json
+test-results/
+playwright-report/
+blob-report/
+traces/
+recordings/
+*.webm
+var-*.tmp
+*.log
+.tmp*.txt
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local source material pending publication review
+Assignment.md
+docs/gemma-client.md
+docs/references/**/*.png

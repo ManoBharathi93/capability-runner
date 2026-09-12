@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workspace</title>
+  <style>
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f6f8; color: #1e2933; }
+    .wrap { padding: 16px; }
+    .shell { border: 1px solid #aebbc7; background: #fff; padding: 14px; }
+    form { margin: 0; }
+    label { display: block; margin-bottom: 4px; font-weight: bold; }
+    input[type="text"] { padding: 6px 8px; width: 220px; border: 1px solid #8f9daa; }
+    button { padding: 6px 10px; border: 1px solid #7d8b98; background: #dbe3ea; }
+    .status { margin-bottom: 12px; color: #5b6873; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="shell">
+      <div class="status">Scenario: {{ scenario_label }}</div>
+      <form method="post" action="{{ search_url }}" target="work-area">
+        <label for="member_id">Member ID</label>
+        <input id="member_id" name="member_id" type="text" maxlength="16" autocomplete="off">
+        <button type="submit">Search</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

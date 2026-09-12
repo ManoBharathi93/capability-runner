@@ -1,0 +1,20 @@
+flowchart LR
+    goal[Goal + trusted target] --> discovery[Discovery Engine]
+    observation[Normalized observation] --> discovery
+    discovery --> model[Model Client]
+    model --> proposal[Proposed typed action]
+    proposal --> gateway[Action Gateway]
+    gateway --> surface[Surface Adapter]
+    surface --> observation
+    discovery --> builder[Capability Builder]
+    builder --> validator[Capability Validator]
+    validator --> store[Capability Store]
+
+    invocation[Capability + typed inputs] --> replay[Replay Engine]
+    store --> replay
+    replay --> evaluator[Non-LLM State Evaluator]
+    observation --> evaluator
+    replay --> gateway
+    evaluator --> result[Success / business outcome / failure]
+
+    replay --- no_model[No Model Client dependency]
