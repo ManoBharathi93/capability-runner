@@ -7,8 +7,9 @@ request authorizes the bounded profile-less browser path, generated application 
 Discovery workspace and evaluation harness. This supersedes the older P1.0/P5 stop text for this
 milestone. Implementation is complete and scoped acceptance is **VERIFIED BEHAVIOR**: both live
 applications, real product UI, safety regressions and final gates passed as recorded below.
-Teach/P6 and external publication remain
-outside scope. The mandatory submission matrix remains 29 PASS, 0 PARTIAL, 1 MISSING (publication).
+Teach/P6 remains outside scope. The source was published to the public Capability Runner GitHub
+repository on 2026-09-12, and anonymous repository and raw README access returned HTTP 200. The
+mandatory submission matrix is now 30 PASS, 0 PARTIAL, 0 MISSING.
 
 Status terms are intentionally independent:
 
@@ -807,3 +808,14 @@ response was included.
 Implementation preserves CoreBank's known-profile POST search with an explicit exact read-only
 route exception. Generic authorization otherwise requires the configured read-only origin/path;
 page and model text cannot grant it. No significant dependency was added.
+
+## Public submission delivery
+
+Delivery status: **VERIFIED BEHAVIOR** on 2026-09-12. Local `main` was pushed to the public
+[Capability Runner repository](https://github.com/ManoBharathi93/capability-runner). GitHub reports
+`main` as the default branch and the repository as public. A credential-disabled `git ls-remote`
+resolved the published branch, and anonymous HTTP requests to the repository page and raw README
+both returned 200. The intended-public staged set was checked before the first push: local `.env`,
+the assignment source, private provider notes, browser images, run data, caches, dependencies,
+generated builds, and temporary reports were ignored; 229 staged text files had no matching
+credential signature or workstation user path.

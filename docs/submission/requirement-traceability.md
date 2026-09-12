@@ -51,41 +51,41 @@ writes only to pytest temporary storage is not a curated `/evidence/` deliverabl
 | L-01 | §6.1 | Root README explains setup, configuration, offline mode, and exact discovery then replay demo | `README.md` | P5.2 command runs; P5.3 README/link inspection | **PASS** | The root README documents fresh setup, explicit Chromium installation, provider variables and no-fallback behavior, exact live and model-free commands, expected results, output locations, checks, and limits. |
 | L-02 | §6.2 | Root `REPORT.md` uses the seven required headings | Repository root | P5.3 exact-heading check | **PASS** | `REPORT.md` exists and contains exactly the seven required second-level headings in assignment order. |
 | L-03 | §4, §5, §6.3 | `/evidence/` contains a generated artifact plus discovery and replay logs | `evidence/` | P5.3 provenance, hash, parse, path, and privacy checks | **PASS** | Byte-identical files from genuine runs include the generated artifact, combined Discovery/fresh-Replay log and summary, a model-free business outcome, and bounded terminal-failure surface evidence. |
-| L-04 | §6.1, §11 | Source is delivered in a public Git repository | Submission transport | Local workspace inspection; external delivery unavailable | **MISSING** | This workspace has no Git metadata or public URL, so public-repository delivery cannot be verified here. |
+| L-04 | §6.1, §11 | Source is delivered in a public Git repository | Submission transport | Public repository plus anonymous repository and raw README access checks | **PASS** | Source is on public `main` at [github.com/ManoBharathi93/capability-runner](https://github.com/ManoBharathi93/capability-runner); both anonymous checks returned HTTP 200 after publication. |
 
 ## Count and verdict
 
 Mandatory rows: **30**.
 
-- **PASS:** 29
+- **PASS:** 30
 - **PARTIAL:** 0
-- **MISSING:** 1
+- **MISSING:** 0
 
-The local submission package is **READY WITH GAPS**. All locally verifiable mandatory behavior and
-artifacts pass. L-04 remains the sole missing requirement because this workspace has no Git
-metadata or verified public URL; public delivery is an external owner action.
+The submission package is **READY** against the mandatory matrix. All 30 mandatory rows have
+implementation or delivery evidence. Optional product hardening and qualification work remain
+clearly separated below.
 
 ## Optional scope
 
 The assignment's agent-facing capability catalog, code generation, confidence/approval lifecycle,
 bounded LLM fallback, cross-tenant runtime demonstration, and multi-run stability report are
-**OUT_OF_SCOPE_OPTIONAL**. A React product frontend is also unnecessary for assignment compliance;
-the implemented local operator page is the permitted minimal operator surface. These items must
-not obscure the required discovery-to-replay story.
+**OUT_OF_SCOPE_OPTIONAL**. The implemented React product frontend and capability catalog improve
+reviewability, while the remaining optional items must not obscure the required
+discovery-to-replay story.
 
 ## Proof boundaries
 
 - The genuine provider-backed P3 live test is recorded as previously passed in
   `docs/progress.md`; it was not rerun during P5.1.
-- The current collection has 341 cases: 335 ordinary cases and 6 live cases.
+- The current collection has 379 cases: 371 ordinary cases and 8 opt-in live cases.
 - Default pytest excludes `live`, so ordinary tests do not call external model providers. Browser
   integration tests use local Chromium and a loopback Flask server.
-- `playwright` installation does not install Chromium automatically. A fresh setup needs an
-  explicit browser-install command in the future README.
+- `playwright` installation does not install Chromium automatically. The root README includes the
+  required explicit browser-install command.
 - `.env.example` contains all eight provider variable names expected by provider documentation;
   values are empty/placeholders. This proves template shape, not credential validity.
-- The latest completed full gates are the P5.4a baseline: 335 passed, 6 live deselected; Ruff passed;
-  Pyright reported 0 errors and warnings; lock check resolved 31 packages unchanged.
+- The latest completed full gates are 371 passed with 8 live cases deselected; 7 frontend tests,
+  TypeScript typecheck, production build, Ruff, Pyright, and lock consistency passed.
 - P5.4a.1 changed curated evidence and documentation only. Its focused evidence regression passed
   17 tests; all three refreshed through-line files parse, match their runtime sources byte-for-byte,
   and contain zero prohibited privacy matches.

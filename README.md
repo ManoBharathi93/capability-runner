@@ -1,5 +1,7 @@
 # Capability Runner
 
+Public repository: [github.com/ManoBharathi93/capability-runner](https://github.com/ManoBharathi93/capability-runner)
+
 Capability Runner turns one genuine LLM-guided browser run into a typed, versioned capability and
 then executes that capability deterministically without a model in the decision loop. The included
 vertical slice operates a synthetic, read-only CoreBank application through real Chromium and
