@@ -8,6 +8,31 @@ import { InterventionsPage } from "./InterventionsPage";
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("direct browser handoff", () => {
+  it.each([true, false])("checks the sign-in scenario returned by the backend (matching=%s)", async (matching) => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const payload = init?.method === "POST" ? {
+        intervention_id: "returned", blocked_action: matching ? "session.sign_in" : "member.accounts.savings",
+      } : { interventions: [] };
+      return new Response(JSON.stringify(payload), { headers: { "Content-Type": "application/json" } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<MemoryRouter initialEntries={["/interventions"]}><Routes>
+      <Route path="/interventions" element={<InterventionsPage />} />
+      <Route path="/interventions/:interventionId" element={<p>Requested handoff opened</p>} />
+    </Routes></MemoryRouter>);
+    await userEvent.click(await screen.findByRole("button", { name: "Start Sign-in Handoff" }));
+    if (matching) {
+      expect(await screen.findByText("Requested handoff opened")).toBeInTheDocument();
+    } else {
+      expect(await screen.findByText(/running backend returned a different handoff/)).toBeInTheDocument();
+      expect(screen.queryByText("Requested handoff opened")).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Open returned handoff" })).toHaveAttribute("href", "/interventions/returned");
+    }
+    const posts = fetchMock.mock.calls.filter(([, init]) => init?.method === "POST");
+    expect(posts).toHaveLength(1); // Do not automatically stop an existing human session.
+    expect(posts[0][1]?.body).toBe(JSON.stringify({ handoff_kind: "sign_in" }));
+  });
+
   it("keeps sign-in credentials out of the product preview", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
       intervention_id: "login", run_id: "run", active: true,

@@ -61,6 +61,11 @@ The [screenshot guide](docs/submission/test-product.md) continues through checki
 member-not-found, and physical handoff. If a tab was open during a rebuild,
 hard-refresh it with **Ctrl+Shift+R**.
 
+After updating Python code, stop the running server with **Ctrl+C** and rerun
+`uv run capability-runner serve`. Rebuilding the frontend does not restart the
+backend. If Sign-in Handoff opens Member Details, the backend may still be running
+the older Savings-only handler; stop that handoff and restart the server.
+
 Interventions also offers **Start Sign-in Handoff**: use the public synthetic
 credentials in the managed browser, then return control so Replay completes
 the lookup. This is a demo sign-in gate, not production authentication.

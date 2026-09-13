@@ -30,11 +30,17 @@ function InterventionList() {
   const navigate = useNavigate();
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unexpectedHandoff, setUnexpectedHandoff] = useState<string | null>(null);
   async function start(signIn = false) {
-    setStarting(true); setError(null);
+    setStarting(true); setError(null); setUnexpectedHandoff(null);
     try {
       const result = await apiRequest<Intervention>("/api/interventions", { method: "POST",
         ...(signIn ? { body: JSON.stringify({ handoff_kind: "sign_in" }) } : {}) });
+      if (result.blocked_action !== (signIn ? "session.sign_in" : "member.accounts.savings")) {
+        setUnexpectedHandoff(result.intervention_id);
+        setError("The running backend returned a different handoff than requested. Open and stop that handoff, then restart the product server and refresh this page. Rebuilding the frontend alone does not update a running backend.");
+        return;
+      }
       navigate(`/interventions/${result.intervention_id}`);
     } catch (requestError) { setError(errorMessage(requestError)); }
     finally { setStarting(false); }
@@ -49,6 +55,7 @@ function InterventionList() {
         <Hand size={17} />{starting ? "Opening..." : "Start Sign-in Handoff"}</button>
     </div></section>
     {error && <p className="inline-error">{error}</p>}
+    {unexpectedHandoff && <NavLink className="button button-secondary" to={`/interventions/${encodeURIComponent(unexpectedHandoff)}`}>Open returned handoff</NavLink>}
     <section className="panel"><div className="panel-heading"><h3>Intervention History</h3></div>
       {interventions.loading ? <LoadingState /> : interventions.error ?
         <ErrorState message={interventions.error} retry={interventions.reload} /> :

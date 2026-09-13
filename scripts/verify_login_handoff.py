@@ -38,7 +38,11 @@ def main() -> None:
             identity_before = live.identity_before
 
             async def capture_empty_login() -> None:
-                await state.page.screenshot(path=str(output / "managed-sign-in.png"))
+                # Evidence capture can take longer than the adapter's action timeout.
+                # Keep the runtime action/validation limits unchanged.
+                await state.page.screenshot(
+                    path=str(output / "managed-sign-in.png"), timeout=15000
+                )
 
             live.runner.run(capture_empty_login())
             page.get_by_role("button", name="Take control", exact=True).click()

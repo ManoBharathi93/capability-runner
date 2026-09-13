@@ -1,5 +1,17 @@
 # Synthetic sign-in handoff
 
+## Stale backend diagnosis, 2026-09-13
+
+The owner reported that Start Sign-in Handoff opens Member Details. A newer
+frontend can be served by an older Python process: rebuilding JavaScript does
+not reload that process. The pre-login endpoint ignores the sign-in body and
+starts the original Savings handoff. The UI must check the returned blocked
+action before navigating, explain a scenario mismatch, and link to the returned
+handoff so the reviewer can stop it before restarting. It must not automatically
+stop a session, which could already belong to a human. The backend's sign-in
+contract and resume validation remain unchanged. Test both matching and wrong
+scenario responses and the existing login/return browser checks.
+
 **ACCEPTED BASELINE:** the owner requested a login example using the existing
 human-control mechanism. This adds a local demo sign-in gate, not production
 authentication or new banking operations.

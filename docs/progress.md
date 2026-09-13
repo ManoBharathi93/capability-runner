@@ -1,5 +1,34 @@
 # Progress
 
+## Sign-in scenario selection and stale backend — 2026-09-13
+
+The owner reported Member Details after requesting the sign-in example. Inspection
+found a pre-login backend process serving the current frontend. Its endpoint
+ignores the sign-in request body and selects Savings approval. Two diagnostic
+requests entered that older Savings path but returned 409 after a surface timeout;
+they did not complete a sign-in test. Their local event logs are retained under
+`var/demo-runs/`. A page refresh or frontend rebuild cannot reload Python code.
+
+The frontend now checks the returned blocked action against the requested
+scenario. A mismatch stays on the list, explains the required backend restart,
+and links to the returned handoff. It never automatically stops a human session.
+README now explains restarting the backend after Python updates. The existing
+login contract, credential controls and Replay validation are unchanged.
+
+Completed checks are **VERIFIED BEHAVIOR**:
+
+| Check | Completed result |
+| --- | --- |
+| Sign-in browser tests | 5 passed in 57.85 seconds; same-browser authenticated continuation, wrong/no login, closed browser, cookie-free access and credential omission. `var/sign-in-regression.xml`. |
+| Frontend | 17 tests passed, including matching/mismatched scenario responses and no automatic stop. Production build and TypeScript check passed. |
+| Current headed UI | Passed: sign-in gate, takeover, synthetic login, fresh return validation, four lookup actions, 98765/USD, unchanged browser identity and zero model calls. Local summary and UI record: `var/sign-in-current-ui/evidence/`. Input was automated, not physical acceptance. |
+| Verification script | Initial screenshot capture exceeded the adapter's inherited 2-second timeout. Explicit 15-second evidence screenshot timeout fixed capture; runtime action and validation budgets were not changed. Script Ruff check passed. |
+
+Successful physical human acceptance remains pending. The current backend is
+available on the separate local review port; the original process still requires
+a restart to load the sign-in implementation. Public curated captures were not
+overwritten by this diagnostic run.
+
 ## Explain an incomplete human step on return — 2026-09-13
 
 The owner reported `RESUME_STATE_UNVERIFIED` and confirmed that the managed
@@ -70,7 +99,7 @@ This is a dated record of completed work. It is not a claim that every run succe
 | Check | Latest recorded result |
 | --- | --- |
 | Ordinary Python regression | 380 passed; eight opt-in live cases excluded. |
-| Frontend | 12 tests passed; typecheck and production build passed. |
+| Frontend | 17 tests passed; typecheck and production build passed. |
 | Static checks | Ruff, Pyright and lock consistency passed. |
 | Banking evaluation | 13 cases passed, including expected safe failures; zero Replay model calls. |
 | Real-provider product runs | Savings and Checking completed, then replayed with different inputs. |
