@@ -121,8 +121,8 @@ npm --prefix web run build
 ```
 
 [Progress](../progress.md) records the latest completed results: 380 ordinary
-Python tests and 11 frontend tests. Eight live cases are excluded by default.
-This documentation edit does not rerun those suites.
+Python tests in the full run. The sign-in change passed 38 focused Python tests
+and 12 frontend tests. Eight live cases are excluded by default.
 
 ## Optional browser scripts
 

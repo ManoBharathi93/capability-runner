@@ -8,6 +8,21 @@ import { InterventionsPage } from "./InterventionsPage";
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("direct browser handoff", () => {
+  it("keeps sign-in credentials out of the product preview", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      intervention_id: "login", run_id: "run", active: true,
+      handoff_kind: "sign_in", control_state: "pause_requested", generation: 1,
+      state_label: "Waiting for operator", reason_code: "APPROVAL_REQUIRED",
+    }), { headers: { "Content-Type": "application/json" } })));
+    render(<MemoryRouter initialEntries={["/interventions/login"]}><Routes>
+      <Route path="/interventions/:interventionId" element={<InterventionsPage />} />
+    </Routes></MemoryRouter>);
+    await screen.findByRole("heading", { name: "Sign in in the managed browser" });
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Demo password")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Return control to automation" })).toBeDisabled();
+  });
+
   it.each(["SUCCESS", "VALIDATION_FAILED"])("renders the backend %s without proxy browser controls", async (outcome) => {
     const initial = { intervention_id: "live", run_id: "run", active: true,
       control_state: "pause_requested", state_label: "Waiting for operator", generation: 1,

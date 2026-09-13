@@ -110,6 +110,27 @@ keeps that distinction explicit.
 
 ## 6. Check failure handling and evidence
 
+### Sign-in handoff alternative
+
+In Interventions, choose **Start Sign-in Handoff**, then **Take control**.
+In the same managed Chromium window, sign in with the public test values
+**demo-reviewer / demo-only**. Return control in the product.
+
+Expect fresh authenticated-state validation, followed by the four automated
+Savings lookup actions: **SUCCESS, 98765/USD, generation 3, zero model calls**.
+No credential action is performed by automation. Wrong/no login must return
+non-success without a balance. Finish or stop an existing handoff before
+switching examples.
+
+![Synthetic sign-in in the managed browser](screenshots/managed-sign-in.png)
+
+The product disables preview images for this credential-entry scenario.
+This is a synthetic sign-in gate, not production authentication or general
+session-expiry recovery. [Recorded checks](../../evidence/login-handoff/README.md)
+use automated input; physical acceptance remains separate.
+
+### Negative cases
+
 Start a fresh handoff for each case:
 
 | Your action | Expected result |

@@ -119,6 +119,7 @@ class _InterventionExecution:
     operator_counter: _ExecutedOperatorActionCounter
     initial_result: ReplayResult
     manager: InterventionManager
+    login_required: bool = False
 
 
 class _ExecutedActionCounter:
@@ -656,12 +657,19 @@ async def prepare_intervention(
     recorder: EvidenceRecorder,
     headless: bool = True,
     grant_operator: bool = True,
+    login_required: bool = False,
 ) -> _InterventionExecution:
     profile = build_core_bank_demo_profile(f"{base_url}/")
+    capability = build_demo_capability()
+    policy = build_demo_automation_policy(require_savings_approval=True)
+    if login_required:
+        from .login_handoff import build_login_handoff
+
+        profile, policy, capability = build_login_handoff(base_url)
     adapter = BrowserSurfaceAdapter(headless=headless)
     controller = SessionController()
     automation_gateway = ActionGateway(
-        policy_guard=PolicyGuard(build_demo_automation_policy(require_savings_approval=True)),
+        policy_guard=PolicyGuard(policy),
         session_controller=controller,
         surface_adapter=adapter,
         evidence_recorder=recorder,
@@ -707,7 +715,6 @@ async def prepare_intervention(
         surface_session=session,
         profile=profile,
     )
-    capability = build_demo_capability()
     initial_result = await replay_engine.replay(
         capability,
         {"member_id": DISCOVERY_MEMBER_ID},
@@ -763,6 +770,7 @@ async def prepare_intervention(
         operator_counter=operator_counter,
         initial_result=initial_result,
         manager=manager,
+        login_required=login_required,
     )
 
 
@@ -799,6 +807,7 @@ def verify_intervention(
                 "member.search.member_id": 1,
                 "member.search.submit": 1,
                 "member.results.open": 1,
+                **({"member.accounts.savings": 1} if live.login_required else {}),
             }
         ),
         "Replay repeated a pre-intervention automation action.",

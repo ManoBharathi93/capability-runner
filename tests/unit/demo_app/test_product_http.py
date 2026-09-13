@@ -32,7 +32,7 @@ class RecordingWorkflows:
     def list_active_interventions(self) -> list[dict[str, object]]:
         return []
 
-    def start_intervention(self) -> dict[str, object]:
+    def start_intervention(self, *, login_required: bool = False) -> dict[str, object]:
         return {"intervention_id": "intervention-live", "active": True}
 
     def get_intervention(self, intervention_id: str) -> dict[str, object]:

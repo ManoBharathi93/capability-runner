@@ -81,6 +81,7 @@ export type EvidenceEvent = {
 };
 
 export type Intervention = {
+  handoff_kind?: "sign_in" | "savings_approval";
   application?: string;
   surface_session_id?: string;
   owner_kind?: string;

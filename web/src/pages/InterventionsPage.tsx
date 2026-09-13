@@ -17,10 +17,11 @@ function InterventionList() {
   const navigate = useNavigate();
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  async function start() {
+  async function start(signIn = false) {
     setStarting(true); setError(null);
     try {
-      const result = await apiRequest<Intervention>("/api/interventions", { method: "POST" });
+      const result = await apiRequest<Intervention>("/api/interventions", { method: "POST",
+        ...(signIn ? { body: JSON.stringify({ handoff_kind: "sign_in" }) } : {}) });
       navigate(`/interventions/${result.intervention_id}`);
     } catch (requestError) { setError(errorMessage(requestError)); }
     finally { setStarting(false); }
@@ -28,8 +29,12 @@ function InterventionList() {
   return <div className="page-stack page-enter">
     <section className="page-title split"><div><p className="eyebrow">SAME-SESSION HANDOFF</p>
       <h2>Human Interventions</h2><p>Take over the managed browser when automation needs your help.</p>
-    </div><button className="button button-primary" type="button" onClick={start} disabled={starting}>
-      <Hand size={17} />{starting ? "Opening..." : "Start Demo Handoff"}</button></section>
+    </div><div className="operator-actions">
+      <button className="button button-secondary" type="button" onClick={() => start()} disabled={starting}>
+        <Hand size={17} />Start Demo Handoff</button>
+      <button className="button button-primary" type="button" onClick={() => start(true)} disabled={starting}>
+        <Hand size={17} />{starting ? "Opening..." : "Start Sign-in Handoff"}</button>
+    </div></section>
     {error && <p className="inline-error">{error}</p>}
     <section className="panel"><div className="panel-heading"><h3>Intervention History</h3></div>
       {interventions.loading ? <LoadingState /> : interventions.error ?
@@ -58,11 +63,12 @@ function InterventionDetail({ interventionId }: { interventionId: string }) {
   const [previewUnavailable, setPreviewUnavailable] = useState(false);
   const data = current ?? intervention.data;
   const live = Boolean(data?.active && !completion);
+  const signIn = data?.handoff_kind === "sign_in";
   useEffect(() => {
-    if (!live || previewUnavailable) return;
+    if (!live || previewUnavailable || signIn) return;
     const interval = window.setInterval(() => setViewRevision((value) => value + 1), 2000);
     return () => window.clearInterval(interval);
-  }, [live, previewUnavailable]);
+  }, [live, previewUnavailable, signIn]);
 
   async function transition(kind: "take-control" | "focus-browser" | "return-control" | "stop") {
     setBusy(true); setMessage(null);
@@ -95,12 +101,16 @@ function InterventionDetail({ interventionId }: { interventionId: string }) {
     <section className="intervention-banner"><span><Hand size={30} /></span><div>
       <h3>{live ? "Human intervention required" : "Human intervention recorded"}</h3>
       <p>{data.reason ?? data.summary ?? "Approval is required before opening Savings."}</p>
-      <small>{live ? "Automation is paused. Take control, click Open in the Savings row of the managed browser, then return control here." : "This historical record has no live browser session."}</small>
+      <small>{live ? (signIn ? "Take control and sign in in the managed browser. Return control here to let automation complete the savings lookup." : "Automation is paused. Take control, click Open in the Savings row of the managed browser, then return control here.") : "This historical record has no live browser session."}</small>
     </div></section>
     <div className="intervention-grid"><section className="panel live-surface">
       <div className="panel-heading"><h3>Managed browser preview</h3><span className="panel-count">Preview only</span></div>
       {live ? <div className="surface-frame"><div className="browser-chrome"><i /><i /><i /><span>Interact in the managed browser window</span></div>
-        {previewUnavailable ? <p>Preview unavailable. If you closed the browser, return control to record the failure or stop the session.</p> :
+        {signIn ? <div className="historical-surface"><h3>Sign in in the managed browser</h3>
+          <p>Browser images are disabled for this sign-in example to keep credential entry out of the preview.</p>
+          <p>Synthetic demo only: <strong>demo-reviewer</strong> / <strong>demo-only</strong>. Do not enter real credentials.</p>
+          <p>After sign-in, return control. Automation will read member 67890's savings balance.</p></div> :
+          previewUnavailable ? <p>Preview unavailable. If you closed the browser, return control to record the failure or stop the session.</p> :
           <img src={`${endpoint}/view?generation=${data.generation ?? 0}&revision=${viewRevision}`}
             alt="Read-only preview of the managed browser" onError={() => setPreviewUnavailable(true)} />}
       </div> : <div className="historical-surface"><h3>Live surface closed</h3><p>Review the run evidence for the recorded outcome.</p></div>}
@@ -116,7 +126,7 @@ function InterventionDetail({ interventionId }: { interventionId: string }) {
         <div><dt>Currency</dt><dd>{outputs.currency}</dd></div></>}
     </dl><div className="audit-note"><span><strong>Direct browser handoff</strong><small>Human clicks happen in the browser. Passive observations are separate from gateway actions. Fresh state decides whether Replay can resume.</small></span></div></aside></div>
     {live && <section className="operator-bar"><div><strong>{human ? "You control the managed browser" : "Ready to transfer control"}</strong>
-      <small>{data.browser_headless ? "Headless test mode: restart with CAPABILITY_RUNNER_BROWSER_HEADLESS=false for a visible browser." : "Switch to the Capability Runner managed browser window. Click Open in the Savings row, then return here."}</small></div>
+      <small>{data.browser_headless ? "Headless test mode: restart with CAPABILITY_RUNNER_BROWSER_HEADLESS=false for a visible browser." : signIn ? "Sign in in the managed browser, then return here. Automation completes the lookup." : "Switch to the Capability Runner managed browser window. Click Open in the Savings row, then return here."}</small></div>
       <div className="operator-actions">
         <button className="button button-secondary" type="button" disabled={busy} onClick={() => transition(human ? "focus-browser" : "take-control")}>
           <Hand size={17} />{human ? "Focus live browser" : "Take control"}</button>

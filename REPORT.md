@@ -97,6 +97,11 @@ step, reason, session identity and safe context. Take control waits for admitted
 automation to finish, then grants ownership of the same Chromium Page and
 BrowserContext. The person clicks in that window; the product image is a preview.
 
+The synthetic sign-in example uses the same approval boundary: a human signs in,
+a fresh authenticated-state condition passes, then Replay completes the lookup.
+Its credential-entry preview endpoint is disabled. It is not general session-expiry
+recovery or production authentication.
+
 Returning control triggers a fresh observation before automation resumes. The
 person may have completed the blocked action, opened the wrong account, or closed
 the page. Continuing from the old snapshot could repeat an action or return the

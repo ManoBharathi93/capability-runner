@@ -33,6 +33,27 @@ Both use the same checks before automated actions reach the browser.
 
 See the [repository map](../repository-map.md) for source locations.
 
+## Architecture concept images
+
+These are early design illustrations, not execution evidence. Labels such as
+“production ready,” “approved capability,” “complete audit trail,” and learning
+from user demonstrations exceed the current implementation. The actual flow
+and limits are described above and in [REPORT](../../REPORT.md).
+
+<details>
+<summary>End-to-end data-flow concept</summary>
+
+![Concept: Discovery, saved capability, Replay and shared controls](../references/architecture/data-flow-concept.png)
+
+</details>
+
+<details>
+<summary>Layered system concept</summary>
+
+![Concept: interfaces, workflow engines, controls, adapters and storage](../references/architecture/layered-concept.png)
+
+</details>
+
 ## What is saved
 
 The capability defines inputs, outputs, steps and conditions. The application

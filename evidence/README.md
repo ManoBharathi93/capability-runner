@@ -13,6 +13,7 @@ make a run look successful.
 | What happens on a technical failure? | [Failure events](failure/evidence.jsonl) | TARGET_NOT_FOUND with bounded visible text from an expired session. |
 | Does Checking work on another app? | [Checking summary](checking/ui-summary.json) | Real-model Discovery, then different-input Replay: 15840/USD, zero Replay calls. |
 | Does the native handoff retain the browser? | [Direct-browser summary](direct-browser/summary.json) | Same Page/context/session, ownership changes, validated continuation. Automated input, not physical acceptance. |
+| Can a human sign in before automation continues? | [Sign-in handoff](login-handoff/README.md) | Synthetic login, fresh state validation, then four model-free lookup actions. Automated input, not physical acceptance. |
 
 ## Reading the records
 

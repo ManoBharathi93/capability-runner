@@ -1,5 +1,42 @@
 # Progress
 
+## Synthetic sign-in handoff and concept diagrams — 2026-09-13
+
+The owner authorized a login example and requested the two existing architecture
+concepts in public system-design documentation, with detailed explanation and
+narration kept only in the ignored personal guide. The diagram captions explicitly
+separate conceptual approval, production and audit claims from implemented behavior.
+
+The [sign-in design record](subsystems/login-handoff.md) uses the existing
+approval-only Replay checkpoint. A synthetic target sign-in precedes the four
+existing lookup actions; no Replay contract, model fallback, new banking operation
+or production authentication was introduced. All automation still uses Action
+Gateway. Physical credentials are entered only in the retained browser; this
+scenario's preview endpoint is disabled. The old approval example remains available.
+
+Completed checks are **VERIFIED BEHAVIOR**:
+
+| Check | Completed result |
+| --- | --- |
+| Focused Python regression | 38 passed in 92.42 seconds: all demo-app unit tests, native/login handoff and Replay continuation. `var/login-regression.xml`. |
+| Login boundaries | Four lookup actions once after sign-in; no credential/operator gateway actions or model calls; fixed 98765/USD and identical Page/context. Wrong/no login and closed browser cannot succeed; cookie-free access denied; password canary omitted from responses/logs. |
+| Frontend | 12 tests passed; production build/typecheck passed. Credential-entry scenario renders no browser image or password input in the product. |
+| Static checks | Ruff passed; Pyright zero errors/warnings; lock check passed. |
+| Headed UI | `uv run python scripts/verify_login_handoff.py` passed. [Curated summary](../evidence/login-handoff/summary.json) and [UI record](../evidence/login-handoff/ui-check.json) retain automated-input provenance. Three synthetic captures were inspected. |
+
+The first login test found that the standalone workspace template lacked the
+authenticated marker present in the base template. That was fixed before the
+passing regression. The final headed run regenerated matching screenshots and
+unchanged copies of its summary/log. Physical acceptance remains pending.
+
+The prior full Python suite remains 380 passed; it was not rerun for this bounded
+change. A local review server runs on port 5003 without stopping the older process.
+The detailed image explanations and recording scripts are untracked and ignored.
+Final publication checks: 241 local Markdown targets resolve; REPORT retains
+seven headings and 1,223 words. Configured credential/private-endpoint scan
+passed; entered credential values are absent from the curated sign-in event log.
+The private guide remains untracked. Git whitespace checks passed.
+
 ## Current evidence summary
 
 This is a dated record of completed work. It is not a claim that every run succeeds.
@@ -7,7 +44,7 @@ This is a dated record of completed work. It is not a claim that every run succe
 | Check | Latest recorded result |
 | --- | --- |
 | Ordinary Python regression | 380 passed; eight opt-in live cases excluded. |
-| Frontend | 11 tests passed; typecheck and production build passed. |
+| Frontend | 12 tests passed; typecheck and production build passed. |
 | Static checks | Ruff, Pyright and lock consistency passed. |
 | Banking evaluation | 13 cases passed, including expected safe failures; zero Replay model calls. |
 | Real-provider product runs | Savings and Checking completed, then replayed with different inputs. |

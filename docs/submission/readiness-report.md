@@ -32,7 +32,8 @@ Do not replace that proof with an automated browser click.
 
 ## Recorded checks
 
-The latest full record has **380 Python tests and 11 frontend tests passing**.
+The latest full Python record has **380 tests passing**. The sign-in change passed
+**38 focused Python tests and 12 frontend tests**.
 Eight live-provider tests were excluded from ordinary pytest. Typecheck, build,
 Ruff, Pyright and lock checks also passed. The banking evaluation passed 13 cases.
 

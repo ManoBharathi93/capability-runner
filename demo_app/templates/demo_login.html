@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .login-card { max-width: 420px; margin: 24px auto; }
+  .login-card input { box-sizing: border-box; display: block; width: 100%; padding: 12px; margin-bottom: 18px; border: 1px solid #95a5b2; border-radius: 6px; }
+  .login-card button { width: 100%; padding: 12px; background: #185be8; color: white; border: 0; border-radius: 6px; font-weight: bold; }
+</style>
+<div class="login-card">
+  <p class="muted">SYNTHETIC BANKING DEMO</p>
+  <h1>Sign in to continue</h1>
+  <p>Automation is paused. Take control in Capability Runner, then sign in here.</p>
+  {% if error %}<p role="alert" class="alert">{{ error }}</p>{% endif %}
+  <form method="post" autocomplete="off">
+    <label for="username">Demo username</label>
+    <input id="username" name="username" type="text" maxlength="64" autocomplete="off" required>
+    <label for="password">Demo password</label>
+    <input id="password" name="password" type="password" maxlength="64" autocomplete="off" required>
+    <button type="submit" data-demo-sign-in>Sign in</button>
+  </form>
+  <p class="muted">Use <strong>demo-reviewer</strong> / <strong>demo-only</strong>.
+    These are public test values. Do not enter real credentials.</p>
+  <p>After signing in, return control in Capability Runner. Automation will read
+    member 67890's savings balance.</p>
+</div>
+{% endblock %}

@@ -1,5 +1,9 @@
 # Developer scripts
 
+- `verify_login_handoff.py`: isolated headed synthetic sign-in, fresh validation
+  and model-free lookup in the same browser. Uses automated input, never physical
+  acceptance. Updates `evidence/login-handoff/` and three reviewer screenshots.
+
 - `verify_discovery_workspace.py --application corebank-known`: real-provider savings
   Discovery, different-input Replay and member-not-found through the product UI.
 - `verify_discovery_workspace.py --application bank-b --product checking`: checking

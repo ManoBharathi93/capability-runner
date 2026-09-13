@@ -7,6 +7,7 @@ continues to show the original Discovery session, while the result belongs to Re
 
 | Files | Execution and verification |
 | --- | --- |
+| `managed-sign-in.png`, `login-handoff-human.png`, `login-handoff-completed.png` | [Sign-in check](../../../evidence/login-handoff/ui-check.json): headed browser, automated synthetic login, same Page/context, four lookup actions after return and 98765/USD. No physical acceptance claimed. The managed-login capture is taken before entry; the product credential-preview endpoint is disabled. |
 | `savings-discovery.png`, `savings-replay.png`, `member-not-found.png` | Real-provider Discovery `discovery-9e44b3db5f4d489591ca4e0460958c28`; five model calls; six changing frames. Fresh Replay `replay-d548d1e77f974c0c99ea0bfb709b5b54` returned 438221/USD, then the unknown-member Replay returned MEMBER_NOT_FOUND. See [script result](savings-ui-check.json). |
 | `checking-replay.png` | Real-provider Discovery `discovery-fdd34a0aeb494281abf1813700b73855`; four model calls; four changing frames. Fresh Replay `replay-526f15f18daa4ac7a1b68a25ab3d5c16` returned 15840/USD. See [script result](checking-ui-check.json). |
 | `handoff-paused.png`, `handoff-human.png`, `handoff-completed.png`, `sessions-human.png`, `managed-browser-before.png`, `managed-browser-after.png` | The [direct-browser UI check](../../../evidence/direct-browser/ui-check.json) identifies the isolated headed run and stable browser identities. Playwright directly operated the retained Page as an automated stand-in. Physical human acceptance is not claimed. |

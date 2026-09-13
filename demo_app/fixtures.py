@@ -8,7 +8,7 @@ from typing import Literal
 
 AccountType = Literal["savings", "checking"]
 MemberStatus = Literal["Active", "Restricted"]
-ScenarioMode = Literal["normal", "slow_search", "session_expired"]
+ScenarioMode = Literal["normal", "slow_search", "session_expired", "login_required"]
 
 
 @dataclass(frozen=True, slots=True)

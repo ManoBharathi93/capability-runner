@@ -61,6 +61,10 @@ The [screenshot guide](docs/submission/test-product.md) continues through checki
 member-not-found, and physical handoff. If a tab was open during a rebuild,
 hard-refresh it with **Ctrl+Shift+R**.
 
+Interventions also offers **Start Sign-in Handoff**: use the public synthetic
+credentials in the managed browser, then return control so Replay completes
+the lookup. This is a demo sign-in gate, not production authentication.
+
 ## Run Discovery and Replay from the CLI
 
 ```powershell

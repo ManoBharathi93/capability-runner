@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import secrets
 import time
 from dataclasses import dataclass
 
-from flask import Flask, abort, render_template, request, url_for
+from flask import Flask, abort, redirect, render_template, request, session, url_for
 
 from .fixtures import AccountFixture, ScenarioMode, get_member
+from .login_handoff import DEMO_LOGIN_PASSWORD, DEMO_LOGIN_USER
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,6 +21,35 @@ class DemoScenario:
 def create_app(*, scenario: DemoScenario | None = None) -> Flask:
     app = Flask(__name__)
     app.config["DEMO_SCENARIO"] = scenario or DemoScenario()
+    if _scenario(app).mode == "login_required":
+        app.secret_key = secrets.token_hex(32)
+        app.config.update(MAX_CONTENT_LENGTH=4096, SESSION_COOKIE_SAMESITE="Strict")
+
+    @app.before_request
+    def require_demo_sign_in():
+        if (
+            _scenario(app).mode == "login_required"
+            and request.endpoint not in {"root", "demo_login", "static"}
+            and not session.get("demo_signed_in")
+        ):
+            return redirect(url_for("demo_login"))
+        return None
+
+    @app.route("/demo-login", methods=["GET", "POST"])
+    def demo_login():
+        if _scenario(app).mode != "login_required":
+            abort(404)
+        error = None
+        if request.method == "POST":
+            if (
+                request.form.get("username") == DEMO_LOGIN_USER
+                and request.form.get("password") == DEMO_LOGIN_PASSWORD
+            ):
+                session.clear()
+                session["demo_signed_in"] = True
+                return redirect(url_for("workspace"))
+            error = "Sign-in failed. Use the synthetic demo credentials shown below."
+        return render_template("demo_login.html", error=error)
 
     @app.get("/")
     def root() -> str:

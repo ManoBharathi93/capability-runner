@@ -31,6 +31,7 @@ from capability_runner.surfaces.browser_surface_adapter import BrowserSurfaceSes
 from .app import DemoScenario
 from .app import create_app as create_target_app
 from .discovery_workspace import DiscoveryWorkspace
+from .login_handoff import LOGIN_CAPABILITY_ID
 from .product_artifacts import ProductArtifactError, ProductArtifactIndex
 from .reviewer_runtime import (
     DEFAULT_OUTPUT_ROOT,
@@ -58,7 +59,7 @@ class ProductWorkflow(Protocol):
 
     def list_active_interventions(self) -> list[dict[str, object]]: ...
 
-    def start_intervention(self) -> dict[str, object]: ...
+    def start_intervention(self, *, login_required: bool = False) -> dict[str, object]: ...
 
     def get_intervention(self, intervention_id: str) -> dict[str, object]: ...
 
@@ -123,10 +124,14 @@ class ProductWorkflowService:
                 continue
         return active
 
-    def start_intervention(self) -> dict[str, object]:
+    def start_intervention(self, *, login_required: bool = False) -> dict[str, object]:
         with self._lock:
             if self._live:
                 intervention_id = next(iter(self._live))
+                if self._live[intervention_id].execution.login_required != login_required:
+                    raise DemoRunError(
+                        "Finish or stop the current handoff before starting another kind."
+                    )
                 return self._status_dto(intervention_id, self._live[intervention_id])
 
             run_id = f"intervention-{uuid4().hex}"
@@ -137,7 +142,13 @@ class ProductWorkflowService:
                     explicit_values=frozenset({DISCOVERY_MEMBER_ID})
                 ),
             )
-            target_context = serve_app(create_target_app(scenario=DemoScenario(mode="normal")))
+            target_context = serve_app(
+                create_target_app(
+                    scenario=DemoScenario(
+                        mode="login_required" if login_required else "normal",
+                    )
+                )
+            )
             base_url = target_context.__enter__()
             runner = AsyncCoreRunner(timeout_seconds=60)
             try:
@@ -151,6 +162,7 @@ class ProductWorkflowService:
                         .lower()
                         != "false",
                         grant_operator=False,
+                        login_required=login_required,
                     )
                 )
             except Exception:
@@ -181,6 +193,12 @@ class ProductWorkflowService:
 
     def get_view(self, intervention_id: str) -> tuple[bytes, str]:
         live = self._get_live(intervention_id)
+        if live.execution.login_required:
+            raise OperatorConsoleError(
+                "CREDENTIAL_PREVIEW_DISABLED",
+                "Sign-in happens in the managed browser; credential-entry previews are disabled.",
+                409,
+            )
         try:
             view = live.runner.run(live.execution.adapter.capture_view(live.execution.session))
         except Exception as error:
@@ -312,20 +330,25 @@ class ProductWorkflowService:
             "demo_kind": "intervention",
             "status": status,
             "reason_code": reason,
-            "capability_id": DEMO_CAPABILITY_ID,
+            "capability_id": LOGIN_CAPABILITY_ID
+            if live.execution.login_required
+            else DEMO_CAPABILITY_ID,
             "capability_version": DEMO_CAPABILITY_VERSION,
             "operator_mode": "direct_browser_interaction",
             "physical_human_acceptance": "MANUAL_ACCEPTANCE_REQUIRED",
             "identity_before": live.identity_before,
             "identity_after": identity_after,
-            "blocked_action": "member.accounts.savings",
+            "blocked_action": "session.sign_in"
+            if live.execution.login_required
+            else "member.accounts.savings",
+            "handoff_kind": "sign_in" if live.execution.login_required else "savings_approval",
             "same_surface_session": live.execution.record.surface_session == live.execution.session,
             "generation_before": 0,
             "generation_after": resumed.generation_after if resumed else None,
             "replay_result": replay_result.outcome if replay_result else status,
             "outputs": replay_result.outputs if replay_result else {},
             "repeated_automation_side_effects": (
-                sum(live.execution.automation_counter.executed.values()) != 3
+                any(count > 1 for count in live.execution.automation_counter.executed.values())
             ),
             "discovery_model_calls": 0,
             "builder_model_calls": 0,
@@ -380,9 +403,13 @@ class ProductWorkflowService:
                 "run_id": live.execution.record.run_id,
                 "demo_kind": "intervention",
                 "status": "STOPPED",
-                "capability_id": DEMO_CAPABILITY_ID,
+                "capability_id": LOGIN_CAPABILITY_ID
+                if live.execution.login_required
+                else DEMO_CAPABILITY_ID,
                 "capability_version": DEMO_CAPABILITY_VERSION,
-                "blocked_action": "member.accounts.savings",
+                "blocked_action": "session.sign_in"
+                if live.execution.login_required
+                else "member.accounts.savings",
                 "replay_result": None,
             },
         )
@@ -410,9 +437,19 @@ class ProductWorkflowService:
             "application": "CoreBank Legacy",
             "control_session_id": live.execution.record.control_session_id,
             "run_id": live.execution.record.run_id,
-            "capability_id": DEMO_CAPABILITY_ID,
+            "capability_id": LOGIN_CAPABILITY_ID
+            if live.execution.login_required
+            else DEMO_CAPABILITY_ID,
             "active": True,
-            "blocked_action": "member.accounts.savings",
+            "blocked_action": "session.sign_in"
+            if live.execution.login_required
+            else "member.accounts.savings",
+            "handoff_kind": "sign_in" if live.execution.login_required else "savings_approval",
+            **(
+                {"reason": "Sign-in required in the synthetic banking application."}
+                if live.execution.login_required
+                else {}
+            ),
         }
 
     def _get_live(self, intervention_id: str) -> _LiveProductIntervention:
@@ -629,6 +666,11 @@ def create_product_app(
     @app.post("/api/interventions")
     def start_intervention():
         try:
+            payload = request.get_json(silent=True)
+            if payload is not None:
+                if payload != {"handoff_kind": "sign_in"}:
+                    return _safe_error("INVALID_HANDOFF", "Unsupported handoff request.", 400)
+                return jsonify(workflow_service.start_intervention(login_required=True)), 201
             return jsonify(workflow_service.start_intervention()), 201
         except DemoRunError as error:
             return _safe_error("INTERVENTION_FAILED", str(error), 409)

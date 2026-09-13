@@ -18,6 +18,9 @@
 <body>
   <div class="wrap">
     <div class="shell">
+      {% if session.get('demo_signed_in') %}
+        <p data-session-state>Signed in as demo-reviewer</p>
+      {% endif %}
       <div class="status">Scenario: {{ scenario_label }}</div>
       <form method="post" action="{{ search_url }}" target="work-area">
         <label for="member_id">Member ID</label>
