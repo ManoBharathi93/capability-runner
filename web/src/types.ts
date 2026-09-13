@@ -81,6 +81,10 @@ export type EvidenceEvent = {
 };
 
 export type Intervention = {
+  application?: string;
+  surface_session_id?: string;
+  owner_kind?: string;
+  browser_headless?: boolean;
   intervention_id: string | null;
   run_id: string;
   capability_id: string | null;

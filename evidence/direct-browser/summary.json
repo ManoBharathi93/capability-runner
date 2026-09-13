@@ -1,0 +1,39 @@
+{
+  "automated_browser_action_count": 3,
+  "blocked_action": "member.accounts.savings",
+  "builder_model_calls": 0,
+  "capability_id": "lookup_savings_balance",
+  "capability_version": "1.0.0",
+  "demo_kind": "intervention",
+  "discovery_model_calls": 0,
+  "generation_after": 3,
+  "generation_before": 0,
+  "human_action_count": "best_effort_observations_only",
+  "identity_after": {
+    "browser_context_id": "de91d273203e463081584e0c9ba87660",
+    "browser_headless": false,
+    "page_id": "c068d01282834fa19957e6ab7f30dd72",
+    "surface_session_id": "674942e460fa497ba7bb414c16e3e4f4"
+  },
+  "identity_before": {
+    "browser_context_id": "de91d273203e463081584e0c9ba87660",
+    "browser_headless": false,
+    "page_id": "c068d01282834fa19957e6ab7f30dd72",
+    "surface_session_id": "674942e460fa497ba7bb414c16e3e4f4"
+  },
+  "operator_gateway_action_count": 0,
+  "operator_mode": "direct_browser_interaction",
+  "outputs": {
+    "balance_minor_units": 98765,
+    "currency": "USD"
+  },
+  "physical_human_acceptance": "MANUAL_ACCEPTANCE_REQUIRED",
+  "reason_code": "SUCCESS",
+  "repeated_automation_side_effects": false,
+  "replay_model_calls": 0,
+  "replay_result": "SUCCESS",
+  "run_id": "intervention-c998ee9d366841039d4a419096e2f8cb",
+  "same_surface_session": true,
+  "schema_version": 1,
+  "status": "SUCCESS"
+}

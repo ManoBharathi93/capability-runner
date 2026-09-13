@@ -7,7 +7,7 @@ import os
 import threading
 from collections.abc import Callable, Mapping
 from contextlib import AbstractContextManager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol, cast
 from uuid import uuid4
@@ -20,11 +20,13 @@ from capability_runner.application.demo_configuration import (
     DEMO_CAPABILITY_VERSION,
 )
 from capability_runner.application.operator_console import OperatorConsoleError
+from capability_runner.contracts.evidence import EvidenceEvent
 from capability_runner.contracts.operator_console import OperatorActionSubmission
 from capability_runner.discovery.configuration import ModelConfigurationError
 from capability_runner.evidence.evidence_recorder import EvidenceRecorder
 from capability_runner.evidence.redaction import RedactionContext
 from capability_runner.interfaces.async_core_runner import AsyncCoreRunner
+from capability_runner.surfaces.browser_surface_adapter import BrowserSurfaceSessionClosedError
 
 from .app import DemoScenario
 from .app import create_app as create_target_app
@@ -64,6 +66,10 @@ class ProductWorkflow(Protocol):
 
     def get_view(self, intervention_id: str) -> tuple[bytes, str]: ...
 
+    def take_control(self, intervention_id: str) -> dict[str, object]: ...
+
+    def focus_browser(self, intervention_id: str) -> dict[str, object]: ...
+
     def execute_action(
         self,
         intervention_id: str,
@@ -81,6 +87,8 @@ class _LiveProductIntervention:
     runner: AsyncCoreRunner
     execution: Any
     recorder: EvidenceRecorder
+    identity_before: dict[str, str | bool]
+    transition_lock: Any = field(default_factory=threading.RLock)
 
 
 class ProductWorkflowService:
@@ -138,6 +146,11 @@ class ProductWorkflowService:
                         base_url=base_url,
                         run_id=run_id,
                         recorder=recorder,
+                        headless=self._environment_provider()
+                        .get("CAPABILITY_RUNNER_BROWSER_HEADLESS", "false")
+                        .lower()
+                        != "false",
+                        grant_operator=False,
                     )
                 )
             except Exception:
@@ -150,12 +163,16 @@ class ProductWorkflowService:
                 runner=runner,
                 execution=execution,
                 recorder=recorder,
+                identity_before=runner.run(execution.adapter.browser_identity(execution.session)),
             )
             self._live[intervention_id] = live
             return self._status_dto(intervention_id, live)
 
     def get_intervention(self, intervention_id: str) -> dict[str, object]:
-        return self._status_dto(intervention_id, self._get_live(intervention_id))
+        live = self._get_live(intervention_id)
+        with live.transition_lock:
+            self._get_live(intervention_id)
+            return self._status_dto(intervention_id, live)
 
     def get_controls(self, intervention_id: str) -> dict[str, object]:
         live = self._get_live(intervention_id)
@@ -164,58 +181,196 @@ class ProductWorkflowService:
 
     def get_view(self, intervention_id: str) -> tuple[bytes, str]:
         live = self._get_live(intervention_id)
-        view = live.runner.run(live.execution.console.capture_view(intervention_id))
+        try:
+            view = live.runner.run(live.execution.adapter.capture_view(live.execution.session))
+        except Exception as error:
+            raise OperatorConsoleError(
+                "VIEW_UNAVAILABLE", "Managed browser preview is unavailable.", 409
+            ) from error
         return view.content, view.mime_type
+
+    def take_control(self, intervention_id: str) -> dict[str, object]:
+        live = self._get_live(intervention_id)
+        with live.transition_lock:
+            self._get_live(intervention_id)
+            if self._status_dto(intervention_id, live)["control_state"] == "operator_controlled":
+                return self.focus_browser(intervention_id)
+            result = live.runner.run(
+                live.execution.manager.grant_operator_control(
+                    intervention_id,
+                    operator_id="reviewer",
+                    display_name="Local reviewer",
+                )
+            )
+            if result.outcome != "OPERATOR_CONTROLLED":
+                raise OperatorConsoleError(result.reason_code, result.summary, 409)
+            self._event(live, "HUMAN_CONTROL_GRANTED")
+            try:
+                live.runner.run(
+                    live.execution.adapter.start_human_observation(
+                        live.execution.session,
+                        lambda metadata: self._event(live, "HUMAN_BROWSER_ACTION", metadata),
+                    )
+                )
+            except Exception:
+                # Capture is supporting evidence, never an ownership prerequisite.
+                self._event(live, "HUMAN_CAPTURE_UNAVAILABLE")
+            return self.focus_browser(intervention_id)
+
+    def focus_browser(self, intervention_id: str) -> dict[str, object]:
+        live = self._get_live(intervention_id)
+        with live.transition_lock:
+            self._get_live(intervention_id)
+            status = self._status_dto(intervention_id, live)
+            if status["control_state"] != "operator_controlled":
+                raise OperatorConsoleError(
+                    "HUMAN_CONTROL_REQUIRED", "Take control before using the browser.", 409
+                )
+            try:
+                live.runner.run(live.execution.adapter.focus_browser(live.execution.session))
+            except Exception:
+                status["focus_requested"] = False
+            else:
+                status["focus_requested"] = True
+            status["summary"] = (
+                "Switch to the Capability Runner managed browser window. "
+                "The product image is a preview only."
+                if not live.identity_before["browser_headless"]
+                else "Headless test mode has no visible window. Restart with "
+                "CAPABILITY_RUNNER_BROWSER_HEADLESS=false for human review."
+            )
+            return status
 
     def execute_action(
         self,
         intervention_id: str,
         submission: OperatorActionSubmission,
     ) -> dict[str, object]:
-        live = self._get_live(intervention_id)
-        result = live.runner.run(live.execution.console.execute_action(intervention_id, submission))
-        return result.model_dump(mode="json")
+        self._get_live(intervention_id)
+        raise OperatorConsoleError(
+            "DIRECT_BROWSER_REQUIRED",
+            "Use the managed browser window after taking control.",
+            409,
+        )
 
     def return_control(self, intervention_id: str) -> dict[str, object]:
         live = self._get_live(intervention_id)
-        live.runner.run(live.execution.console.return_control(intervention_id))
+        with live.transition_lock:
+            # Another HTTP request may have finished while this request waited.
+            self._get_live(intervention_id)
+            return self._return_control(intervention_id, live)
+
+    def _return_control(
+        self,
+        intervention_id: str,
+        live: _LiveProductIntervention,
+    ) -> dict[str, object]:
+        if self._status_dto(intervention_id, live)["control_state"] != "operator_controlled":
+            raise OperatorConsoleError(
+                "HUMAN_CONTROL_REQUIRED",
+                "Take control before returning it.",
+                409,
+            )
+        live.runner.run(live.execution.adapter.stop_human_observation(live.execution.session))
+        transition = live.runner.run(live.execution.console.return_control(intervention_id))
+        if transition.control_state != "resume_requested":
+            raise OperatorConsoleError(
+                "HUMAN_CONTROL_REQUIRED", "Take control before returning it.", 409
+            )
+        self._event(live, "HUMAN_CONTROL_RETURNED")
+        resumed = None
+        identity_after = None
+        reason = "RESUME_FAILED"
         try:
+            identity_after = live.runner.run(
+                live.execution.adapter.browser_identity(live.execution.session)
+            )
+            if identity_after != live.identity_before:
+                raise DemoRunError("Browser identity changed.")
+            self._event(live, "RESUME_VALIDATION", {"phase": "fresh_observation_requested"})
             resumed = live.runner.run(live.execution.coordinator.resume(intervention_id))
+            reason = resumed.reason_code
+            if resumed.outcome == "SUCCESS":
+                verify_intervention(live.execution, resumed, direct_browser=True)
+            if resumed.generation_after is not None:
+                self._event(
+                    live, "AUTOMATION_CONTROL_RESTORED", {"generation": resumed.generation_after}
+                )
+        except BrowserSurfaceSessionClosedError:
+            reason = "BROWSER_SESSION_CLOSED"
+            resumed = None
+        except Exception:
+            reason = "RESUME_FAILED"
+            resumed = None
         finally:
             self._close_live(intervention_id, live)
-        verify_intervention(live.execution, resumed)
-        replay_result = resumed.replay_result
-        if replay_result is None:
-            raise DemoRunError("Replay continuation returned no result.")
+        replay_result = resumed.replay_result if resumed else None
+        status = resumed.outcome if resumed else "FAILURE"
         summary: dict[str, object] = {
             "schema_version": 1,
             "run_id": live.execution.record.run_id,
             "demo_kind": "intervention",
-            "status": "SUCCESS",
+            "status": status,
+            "reason_code": reason,
             "capability_id": DEMO_CAPABILITY_ID,
             "capability_version": DEMO_CAPABILITY_VERSION,
-            "operator_mode": "product_http",
+            "operator_mode": "direct_browser_interaction",
+            "physical_human_acceptance": "MANUAL_ACCEPTANCE_REQUIRED",
+            "identity_before": live.identity_before,
+            "identity_after": identity_after,
             "blocked_action": "member.accounts.savings",
             "same_surface_session": live.execution.record.surface_session == live.execution.session,
-            "generation_before": resumed.generation_before,
-            "generation_after": resumed.generation_after,
-            "replay_result": replay_result.outcome,
-            "outputs": replay_result.outputs,
+            "generation_before": 0,
+            "generation_after": resumed.generation_after if resumed else None,
+            "replay_result": replay_result.outcome if replay_result else status,
+            "outputs": replay_result.outputs if replay_result else {},
             "repeated_automation_side_effects": (
                 sum(live.execution.automation_counter.executed.values()) != 3
             ),
             "discovery_model_calls": 0,
             "builder_model_calls": 0,
             "replay_model_calls": 0,
-            "browser_action_count": (
-                sum(live.execution.automation_counter.executed.values())
-                + sum(live.execution.operator_counter.executed.values())
+            "automated_browser_action_count": sum(
+                live.execution.automation_counter.executed.values()
             ),
+            "operator_gateway_action_count": sum(live.execution.operator_counter.executed.values()),
+            "human_action_count": "best_effort_observations_only",
         }
         return write_summary(live.recorder.run_directory, summary).summary
 
+    @staticmethod
+    def _event(
+        live: _LiveProductIntervention,
+        code: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        live.recorder.record(
+            EvidenceEvent(
+                event_type="intervention",
+                component="product-browser-handoff",
+                run_id=live.execution.record.run_id,
+                session_id=live.execution.record.control_session_id,
+                reason_code=code,
+                outcome="observed" if code == "HUMAN_BROWSER_ACTION" else "recorded",
+                metadata={
+                    "actor": "human" if code == "HUMAN_BROWSER_ACTION" else "system",
+                    "source": "direct_browser_interaction"
+                    if code == "HUMAN_BROWSER_ACTION"
+                    else "session_controller",
+                    "surface_session_id": live.execution.session.surface_session_id,
+                    **(metadata or {}),
+                },
+            )
+        )
+
     def stop(self, intervention_id: str) -> dict[str, object]:
         live = self._get_live(intervention_id)
+        with live.transition_lock:
+            self._get_live(intervention_id)
+            return self._stop(intervention_id, live)
+
+    def _stop(self, intervention_id: str, live: _LiveProductIntervention) -> dict[str, object]:
+        live.runner.run(live.execution.adapter.stop_human_observation(live.execution.session))
         result = live.runner.run(live.execution.console.stop(intervention_id))
         self._close_live(intervention_id, live)
         write_summary(
@@ -251,6 +406,9 @@ class ProductWorkflowService:
         status = live.runner.run(live.execution.console.get_status(intervention_id))
         return {
             **status.model_dump(mode="json"),
+            **live.identity_before,
+            "application": "CoreBank Legacy",
+            "control_session_id": live.execution.record.control_session_id,
             "run_id": live.execution.record.run_id,
             "capability_id": DEMO_CAPABILITY_ID,
             "active": True,
@@ -536,6 +694,20 @@ def create_product_app(
             return _operator_error(error)
         except DemoRunError as error:
             return _safe_error("RESUME_FAILED", str(error), 409)
+
+    @app.post("/api/interventions/<intervention_id>/take-control")
+    def take_control(intervention_id: str):
+        try:
+            return jsonify(workflow_service.take_control(intervention_id))
+        except OperatorConsoleError as error:
+            return _operator_error(error)
+
+    @app.post("/api/interventions/<intervention_id>/focus-browser")
+    def focus_browser(intervention_id: str):
+        try:
+            return jsonify(workflow_service.focus_browser(intervention_id))
+        except OperatorConsoleError as error:
+            return _operator_error(error)
 
     @app.post("/api/interventions/<intervention_id>/stop")
     def stop_intervention(intervention_id: str):

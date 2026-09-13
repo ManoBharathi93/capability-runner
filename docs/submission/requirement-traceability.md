@@ -1,5 +1,16 @@
 # Assignment Requirement Traceability
 
+## Current native-browser handoff evidence
+
+The owner-requested native handoff supersedes the older controlled HTTP path in H-03/H-04
+below. The product grants ownership of the existing headed Page and BrowserContext;
+the human acts directly. Passive events are observations, not gateway execution.
+[Direct-browser evidence](../../evidence/direct-browser/summary.json),
+[boundary tests](../../tests/end_to_end/test_direct_browser_handoff.py), and the
+[screenshot guide](test-product.md) document this path. Automated direct-Page checks passed;
+physical human acceptance remains a separate manual gate. The historical PASS rows below
+must not be read as physical mouse acceptance or policy interception of human clicks.
+
 ## Audit basis
 
 This P5.1 audit evaluates the repository against the original `Assignment.md`, not against the

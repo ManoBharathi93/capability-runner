@@ -35,7 +35,10 @@ flowchart LR
 
     Replay -->|blocked| Intervention[Intervention Manager]
     Intervention --> Operator[Local Operator Page]
-    Operator --> OperatorGateway[Operator Action Gateway]
+    Operator -->|take control| Sessions
+    Operator -->|physical input in same window| Browser
+    Browser -->|passive human observations| Evidence
+    Debug[CLI controlled test seam] --> OperatorGateway[Operator Action Gateway]
     OperatorGateway --> Policy
     OperatorGateway --> Sessions
     OperatorGateway --> Surface
@@ -94,11 +97,11 @@ whose effect is uncertain is never retried automatically.
 
 For approval-blocked Replay, the result carries an immutable checkpoint only when the action is
 known not to have executed. The continuation coordinator retains protected invocation state in
-memory and asks `InterventionManager` to transfer the existing session. The operator page exposes
-a bounded live view and only currently visible trusted semantic fill/click controls.
+memory and asks `InterventionManager` to transfer the existing session. The product shows a preview and transfers control of the existing headed browser.
 
-Operator actions pass through `OperatorActionGateway`, the same Policy Guard, the same Session
-Controller, and the same Surface Adapter. On handback, fresh semantic state is collected while
+The CLI controlled-action seam retains OperatorActionGateway. In the product, physical human
+input goes directly to the same browser and is outside gateway policy; bounded passive events
+record action kinds without field values or keystrokes. On handback, fresh semantic state is collected while
 automation remains blocked. Session Controller issues a new generation only after validation.
 Replay then checks terminal success first, otherwise proves whether the blocked step is complete;
 it never trusts a pre-intervention snapshot or repeats earlier steps. A consumed continuation can

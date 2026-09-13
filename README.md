@@ -9,8 +9,14 @@ demonstrates successful discovery and replay, an expected business outcome, and 
 intervention.
 
 The architectural principle is simple: the model may propose actions during Discovery, but every
-automated or operator action is resolved through trusted semantic bindings, checked by policy, and
+automated action is resolved through trusted semantic bindings, checked by policy, and
 serialized by session ownership controls. Replay interprets only a validated saved artifact.
+During native handoff, the human acts directly in the same browser; passive observations do not
+claim policy interception or gateway execution.
+
+**Start here: [Test the product step by step, with screenshots](docs/submission/test-product.md).**
+The guide covers savings Discovery, saved artifacts, different-input Replay, checking, expected
+errors, and direct browser handoff. For recording, use the [3–5 minute demo script](docs/submission/demo-walkthrough.md).
 
 ## Prerequisites
 
@@ -88,13 +94,15 @@ uv run capability-runner demo --help
 ## Run the product frontend
 
 The product surface is the clearest reviewer path; the CLI commands remain the shortest reproducible
-evidence path. Both use the same Discovery, Replay, policy, and same-session intervention behavior.
+evidence path. Both reuse the same Discovery, Replay, policy, and ownership components. The CLI intervention
+command retains a controlled HTTP test seam; the product uses physical interaction in the managed browser.
 
 Install and build the client once, then start the full product:
 
 ```powershell
 npm --prefix web ci
 npm --prefix web run build
+$env:CAPABILITY_RUNNER_BROWSER_HEADLESS = "false"
 uv run capability-runner serve
 ```
 
@@ -138,11 +146,8 @@ Run the public live acceptance only with valid provider configuration:
 uv run pytest tests/live/demo/test_demo_through_line.py -m live -q
 ```
 
-The last full Python baseline is 371 ordinary tests passed with 8 live tests deselected. The latest frontend
-check passed 9 tests. The focused savings/checking, Replay-error, and product API regression passed 18 tests.
-The TypeScript check, Vite build, Ruff, and Pyright also passed. The earlier Python dependency lock
-check remained unchanged. See [progress](docs/progress.md) for
-dated evidence rather than treating this statement as a substitute for a local run.
+Current completed checks and their exact counts are recorded in [progress](docs/progress.md).
+Automated direct-Page tests are distinguished from physical human acceptance.
 
 ## Design boundaries
 

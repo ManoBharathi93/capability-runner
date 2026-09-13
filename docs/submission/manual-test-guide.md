@@ -1,5 +1,8 @@
 # Manual test guide
 
+For the shortest reviewer path, start with [Test the product with screenshots](test-product.md).
+This longer checklist includes harness-only edge cases; screenshots are not proof of every negative case.
+
 This guide covers every reviewer-visible product path and the supported edge cases that require the evaluation or test harness. It does not claim coverage of every possible website. Capability Runner intentionally supports an allowlisted, read-only browser scope.
 
 ## Prepare the product
@@ -18,6 +21,7 @@ Copy `.env.example` to `.env` and configure one provider. Use `LLM_PROVIDER=open
 Start the complete local product:
 
 ```powershell
+$env:CAPABILITY_RUNNER_BROWSER_HEADLESS = "false"
 uv run capability-runner serve
 ```
 
@@ -72,21 +76,43 @@ For provider-dependent tests, retry only by starting a new Discovery run. Never 
 
 ## Same-session human handoff
 
-This path needs no model credential.
+This path needs no model credential and requires a local desktop.
 
-1. Open `/interventions` and click **Start Demo Handoff**.
-2. Open the live handoff and click **Take Control**.
-3. Use the available trusted **Savings** control once.
-4. Click **Return Control to Agent**.
+1. Set `CAPABILITY_RUNNER_BROWSER_HEADLESS=false` before starting the product.
+2. Open **Interventions → Start Demo Handoff**. Automation has entered member `67890`,
+   searched, and opened their details. It pauses before the Savings action.
+3. Click **Take control**. The controller changes to Human reviewer, generation 2.
+4. Switch to the **existing Capability Runner managed Chromium window**. Use **Focus live
+   browser** or the OS task switcher if needed. The product image is a preview only.
+5. Physically click **Open** in the **Savings** row. Do not open a separate tab or browser.
+   Confirm that the account screen says Savings and `$987.65 USD`.
+6. Return to the product and click **Return control to automation**. Stop interacting with the
+   managed window once you return control.
 
-Expect the browser session to remain the same, the control generation to advance, and Replay to re-observe the page before continuing. The final result is `SUCCESS`, `98765 / USD`, with zero Replay model calls. The blocked action must not be repeated. Also check these negative paths:
+Expect `SUCCESS`, `98765 / USD`, zero Replay calls, generation 3, and the same surface ID.
+Fresh observation verifies the member, account category and output before resuming.
+Earlier automatic fill/search/open actions must each occur once; automatic Savings count stays zero.
+The browser closes on completion, and Sessions becomes empty.
+
+Physical acceptance is a separate manual check: record your run ID, whether the window was
+visible, what you clicked, the resulting state and generation, and pass/failure. Automated
+Playwright input into the retained Page is only a stand-in, even when Chromium is headed.
+Passive events use `actor=human`, `source=direct_browser_interaction`, and `outcome=observed`;
+they never claim an executed gateway action. Capture can miss events. No field values or
+keystrokes are collected; fresh final state is the authority.
 
 | ID | Action | Expected result |
 | --- | --- | --- |
-| HITL-01 | Click **Return Control to Agent** before completing Savings. | Fresh validation refuses to claim completion. |
-| HITL-02 | Complete Savings and double-click return, or refresh and try the transition again. | Resume occurs at most once; stale or duplicate ownership/generation transitions are rejected. |
-| HITL-03 | Click **Stop** during a live handoff. | The handoff closes without a successful resumed result. |
-| HITL-04 | Restart the server during a handoff. | The live control session is unavailable after restart; only sanitized persisted history may remain. |
+| HITL-01 | Take control and return without acting. | `VALIDATION_FAILED`, no balance, session closed. |
+| HITL-02 | Open **Checking** instead of Savings, then return. | Fresh validation refuses the wrong account; no success output. |
+| HITL-03 | Close the managed browser, then return. | `FAILURE / BROWSER_SESSION_CLOSED`; no replacement browser. |
+| HITL-04 | Double-click Return or submit again after completion. | At most one resume; inactive/stale request rejected. |
+| HITL-05 | Click **Stop** before or after taking control. | Session terminal, no resumed success. |
+| HITL-06 | Restart the server during a handoff. | Active ownership is lost; existing persisted evidence remains. |
+| HITL-07 | Run with headless=true. | UI explicitly reports no visible browser; use headed mode for physical acceptance. |
+
+These negative tests end their attempt. Start another handoff to test the next case.
+The CLI `demo intervention` remains an automated gateway test seam; it is not physical acceptance.
 
 ## CLI tests
 
@@ -128,7 +154,7 @@ uv run pytest tests/integration/surfaces/test_generic_browser.py -q
 uv run pytest tests/integration/capabilities/test_generic_package.py -q
 uv run pytest tests/integration/replay/test_replay_engine_browser.py -q
 uv run pytest tests/integration/interaction/test_action_gateway_browser.py -q
-uv run pytest tests/integration/intervention/test_human_handoff_browser.py tests/end_to_end/test_replay_intervention_resume.py -q
+uv run pytest tests/integration/intervention/test_human_handoff_browser.py tests/end_to_end/test_replay_intervention_resume.py tests/end_to_end/test_direct_browser_handoff.py -q
 ```
 
 Together they cover hidden and duplicate controls, ambiguous resolution, stale element references, unsupported controls, package integrity, different-input Replay, unknown member, restricted member, expired session, bounded slow responses and timeout, policy denial, approval-required dispatch, wrong owner, stale generation, same-session handoff, duplicate resume, and fresh state validation. A passing run means the checked assertions passed against the current local code; it is not evidence that arbitrary websites are supported.
@@ -158,7 +184,10 @@ uv run python scripts/verify_discovery_workspace.py --application bank-b --produ
 uv run python scripts/verify_workspace_handoff.py
 ```
 
-The three Discovery commands require the configured provider and verify changing same-session imagery, artifact creation, and different-input Replay. The handoff script verifies typed operator controls, preview refresh, Sessions navigation, continuation, and six mobile routes without a model. Add `--base-url http://127.0.0.1:5003` when using the alternate product port.
+The three Discovery commands require the configured provider and verify changing same-session imagery, artifact creation, and different-input Replay. The handoff script starts an isolated product and verifies direct Page input, Sessions,
+identity retention, continuation, and six mobile routes without a model. Add `--headed` to
+show the managed window. It does not need an existing server or accept `--base-url`.
+Only the Discovery scripts use `--base-url` for an alternate product port.
 
 The server retains at most eight Discovery workspaces, including completed and failed attempts.
 When that limit is reached, further submissions are rejected before a model call. Finish any

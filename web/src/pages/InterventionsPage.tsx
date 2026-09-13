@@ -1,15 +1,15 @@
-import { AlertCircle, ArrowLeft, Check, ExternalLink, Hand, Play, ShieldCheck, Square } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Check, Hand, Square } from "lucide-react";
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 
 import { apiRequest, errorMessage } from "../api";
-import { EmptyState, ErrorState, LoadingState, StatusBadge, SuccessMark, formatDate, humanize } from "../components";
+import { EmptyState, ErrorState, LoadingState, StatusBadge, formatDate, humanize } from "../components";
 import { useApi } from "../useApi";
-import type { Intervention, OperatorControl } from "../types";
+import type { Intervention } from "../types";
 
 export function InterventionsPage() {
   const { interventionId } = useParams();
-  return interventionId ? <InterventionDetail interventionId={interventionId} /> : <InterventionList />;
+  return interventionId ? <InterventionDetail key={interventionId} interventionId={interventionId} /> : <InterventionList />;
 }
 
 function InterventionList() {
@@ -19,43 +19,111 @@ function InterventionList() {
   const [error, setError] = useState<string | null>(null);
   async function start() {
     setStarting(true); setError(null);
-    try { const result = await apiRequest<Intervention>("/api/interventions", { method: "POST" }); navigate(`/interventions/${result.intervention_id}`); }
-    catch (requestError) { setError(errorMessage(requestError)); }
+    try {
+      const result = await apiRequest<Intervention>("/api/interventions", { method: "POST" });
+      navigate(`/interventions/${result.intervention_id}`);
+    } catch (requestError) { setError(errorMessage(requestError)); }
     finally { setStarting(false); }
   }
-  return <div className="page-stack page-enter"><section className="page-title split"><div><p className="eyebrow">SAME-SESSION HANDOFF</p><h2>Human Interventions</h2><p>Review actual approval handoffs and control only a currently managed browser session.</p></div><button className="button button-primary" type="button" onClick={start} disabled={starting}><Hand size={17} />{starting ? "Opening..." : "Start Demo Handoff"}</button></section>{error && <p className="inline-error">{error}</p>}<section className="panel"><div className="panel-heading"><h3>Intervention History</h3></div>{interventions.loading ? <LoadingState /> : interventions.error ? <ErrorState message={interventions.error} retry={interventions.reload} /> : interventions.data?.interventions.length ? <div className="run-list">{interventions.data.interventions.map((item) => item.intervention_id && <NavLink className="run-row" to={`/interventions/${item.intervention_id}`} key={`${item.run_id}-${item.intervention_id}`}><span className="square-icon warning-icon"><Hand size={17} /></span><span><strong>{item.active ? "Live handoff" : "Recorded handoff"}</strong><small>{item.run_id}</small></span><span>{item.capability_id}</span><StatusBadge status={item.state_label} /><time>{formatDate(item.created_at)}</time></NavLink>)}</div> : <EmptyState icon={<Hand size={27} />} title="No interventions recorded" copy="Start the real H-02 handoff to create one." />}</section></div>;
+  return <div className="page-stack page-enter">
+    <section className="page-title split"><div><p className="eyebrow">SAME-SESSION HANDOFF</p>
+      <h2>Human Interventions</h2><p>Take over the managed browser when automation needs your help.</p>
+    </div><button className="button button-primary" type="button" onClick={start} disabled={starting}>
+      <Hand size={17} />{starting ? "Opening..." : "Start Demo Handoff"}</button></section>
+    {error && <p className="inline-error">{error}</p>}
+    <section className="panel"><div className="panel-heading"><h3>Intervention History</h3></div>
+      {interventions.loading ? <LoadingState /> : interventions.error ?
+        <ErrorState message={interventions.error} retry={interventions.reload} /> :
+        interventions.data?.interventions.length ? <div className="run-list">
+          {interventions.data.interventions.map((item) => item.intervention_id &&
+            <NavLink className="run-row" to={`/interventions/${item.intervention_id}`} key={`${item.run_id}-${item.intervention_id}`}>
+              <span className="square-icon warning-icon"><Hand size={17} /></span>
+              <span><strong>{item.active ? "Live handoff" : "Recorded handoff"}</strong><small>{item.run_id}</small></span>
+              <span>{item.capability_id}</span><StatusBadge status={item.state_label} /><time>{formatDate(item.created_at)}</time>
+            </NavLink>)}</div> : <EmptyState icon={<Hand size={27} />} title="No interventions recorded"
+              copy="Start Demo Handoff to pause the savings workflow for approval." />}
+    </section>
+  </div>;
 }
 
 function InterventionDetail({ interventionId }: { interventionId: string }) {
-  const intervention = useApi<Intervention>(`/api/interventions/${encodeURIComponent(interventionId)}`);
-  const controls = useApi<{ controls: OperatorControl[] }>(intervention.data?.active ? `/api/interventions/${encodeURIComponent(interventionId)}/controls` : null);
+  const endpoint = `/api/interventions/${encodeURIComponent(interventionId)}`;
+  const intervention = useApi<Intervention>(endpoint);
+  const [current, setCurrent] = useState<Intervention | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [finished, setFinished] = useState(false);
-  const [completionStatus, setCompletionStatus] = useState<string | null>(null);
+  const [completion, setCompletion] = useState<string | null>(null);
+  const [outputs, setOutputs] = useState<Record<string, string | number> | null>(null);
   const [viewRevision, setViewRevision] = useState(0);
-  async function act(control: OperatorControl, value?: string) {
+  const [previewUnavailable, setPreviewUnavailable] = useState(false);
+  const data = current ?? intervention.data;
+  const live = Boolean(data?.active && !completion);
+  useEffect(() => {
+    if (!live || previewUnavailable) return;
+    const interval = window.setInterval(() => setViewRevision((value) => value + 1), 2000);
+    return () => window.clearInterval(interval);
+  }, [live, previewUnavailable]);
+
+  async function transition(kind: "take-control" | "focus-browser" | "return-control" | "stop") {
     setBusy(true); setMessage(null);
-    try { const result = await apiRequest<{ summary?: string }>(`/api/interventions/${encodeURIComponent(interventionId)}/actions`, { method: "POST", body: JSON.stringify({ semantic_target: control.semantic_target, action_kind: control.action_kind, ...(value ? { value } : {}) }) }); setMessage(result.summary ?? `${control.label} completed.`); setViewRevision((value) => value + 1); controls.reload(); }
-    catch (requestError) { setMessage(errorMessage(requestError)); }
-    finally { setBusy(false); }
-  }
-  async function transition(kind: "return-control" | "stop") {
-    setBusy(true); setMessage(null);
-    try { const result = await apiRequest<{ replay_result?: string; status?: string; control_state?: string }>(`/api/interventions/${encodeURIComponent(interventionId)}/${kind}`, { method: "POST" }); setFinished(true); setCompletionStatus(result.replay_result ?? result.status ?? result.control_state ?? "COMPLETED"); setMessage(kind === "return-control" ? "Control returned. Replay completed after fresh validation." : "The intervention session was stopped."); }
-    catch (requestError) { setMessage(errorMessage(requestError)); }
+    try {
+      const result = await apiRequest<Intervention & { status?: string; outputs?: Record<string, string | number> }>(`${endpoint}/${kind}`, { method: "POST" });
+      if (kind === "take-control" || kind === "focus-browser") {
+        setCurrent(result); setMessage(result.summary ?? "Switch to the Capability Runner managed browser window.");
+        setPreviewUnavailable(false); setViewRevision((value) => value + 1);
+      } else {
+        const outcome = result.status ?? result.replay_result ?? result.control_state;
+        setCurrent((previous) => ({ ...(previous ?? intervention.data!), active: false,
+          generation: result.generation_after ?? previous?.generation }));
+        setCompletion(outcome);
+        setOutputs(outcome === "SUCCESS" ? result.outputs ?? null : null);
+        setMessage(kind === "stop" ? "The session was stopped." : outcome === "SUCCESS" ?
+          "Fresh browser validation passed. Replay completed without repeating earlier actions." :
+          `Resume did not succeed: ${humanize(result.reason_code ?? outcome)}. The browser session was closed; start a new handoff to try again.`);
+      }
+    } catch (requestError) { setMessage(errorMessage(requestError)); }
     finally { setBusy(false); }
   }
   if (intervention.loading) return <LoadingState label="Loading intervention" />;
   if (intervention.error) return <ErrorState message={intervention.error} retry={intervention.reload} />;
-  if (!intervention.data) return null;
-  const live = intervention.data.active && !finished;
-  const displayedState = finished ? (completionStatus === "terminal" ? "Session stopped" : "Completed intervention") : intervention.data.state_label;
-  const displayedResult = completionStatus ?? intervention.data.replay_result ?? (live ? "Pending" : "Unavailable");
-  return <div className="intervention-page page-enter"><div className="breadcrumbs"><NavLink to="/interventions"><ArrowLeft size={15} /> Interventions</NavLink><span>›</span><span>{intervention.data.run_id}</span></div><div className="run-title"><div><h2>Run / {intervention.data.capability_id}</h2><p>Run ID: {intervention.data.run_id}</p></div><StatusBadge status={live ? "Paused" : displayedState} /></div><section className="intervention-banner"><span><Hand size={30} /></span><div><h3>{live ? "Human intervention required" : "Human intervention recorded"}</h3><p>{intervention.data.reason ?? intervention.data.summary ?? "A trusted semantic action required operator approval."}</p><small>{live ? "Use only the available semantic controls. Replay resumes after fresh state validation." : "This historical record has no live browser session."}</small></div>{live && <button className="button button-primary" type="button" onClick={() => document.getElementById("operator-controls")?.scrollIntoView({ behavior: "smooth" })}><Play size={17} fill="currentColor" /> Take Control</button>}</section><div className="intervention-grid"><section className="panel live-surface"><div className="panel-heading"><h3>Live Browser Session</h3>{live ? <span className="secure-label"><span /> Secure active session</span> : <span className="panel-count">Historical record</span>}</div>{live ? <div className="surface-frame"><div className="browser-chrome"><i /><i /><i /><span>Managed CoreBank surface</span><ExternalLink size={15} /></div><img src={`/api/interventions/${encodeURIComponent(interventionId)}/view?generation=${intervention.data.generation ?? 0}&revision=${viewRevision}`} alt="Current managed browser surface" /></div> : <div className="historical-surface"><ShieldCheck size={46} /><h3>Live surface closed</h3><p>Browser imagery is never persisted. The safe handoff context remains available at right.</p></div>}</section><aside className="panel intervention-details"><div className="panel-heading"><h3>Intervention Details</h3></div><dl><div><dt><AlertCircle size={18} /> Reason</dt><dd>{humanize(intervention.data.reason_code)}</dd></div><div><dt><Square size={18} /> Blocked action</dt><dd>{intervention.data.blocked_action ?? "Unavailable"}</dd></div><div><dt><ShieldCheck size={18} /> Handoff state</dt><dd>{displayedState}</dd></div><div><dt><Check size={18} /> Replay result</dt><dd>{displayedResult}</dd></div></dl><div className="audit-note"><ShieldCheck size={22} /><span><strong>Secure, audited session</strong><small>Actions pass through Action Gateway. Sensitive values are never echoed.</small></span></div></aside></div>{live ? <section id="operator-controls" className="operator-bar"><div><strong>Complete the trusted action, then return control</strong><small>{message ?? "Only controls visible in the current browser state are available."}</small></div><div className="operator-actions">{controls.data?.controls.map((control) => control.action_kind === "click" ? <button key={control.semantic_target} className="button button-secondary" disabled={busy} type="button" onClick={() => act(control)}>{control.label}</button> : <SensitiveControl key={control.semantic_target} control={control} disabled={busy} submit={act} />)}<button className="button button-primary" type="button" disabled={busy} onClick={() => transition("return-control")}><Check size={17} /> Return Control to Agent</button><button className="button button-danger" type="button" disabled={busy} onClick={() => transition("stop")}><Square size={15} /> Stop</button></div></section> : message && <section className="operator-bar completion-bar"><SuccessMark /><div><strong>{displayedResult}</strong><small>{message}</small></div></section>}</div>;
-}
-
-function SensitiveControl({ control, disabled, submit }: { control: OperatorControl; disabled: boolean; submit: (control: OperatorControl, value?: string) => void }) {
-  const [value, setValue] = useState("");
-  return <label className="compact-control"><span>{control.label}</span><input type="password" value={value} onChange={(event) => setValue(event.target.value)} autoComplete="off" /><button className="button button-secondary" type="button" disabled={disabled || !value} onClick={() => { submit(control, value); setValue(""); }}>Submit</button></label>;
+  if (!data) return null;
+  const human = data.control_state === "operator_controlled";
+  const state = completion ?? data.state_label;
+  return <div className="intervention-page page-enter">
+    <div className="breadcrumbs"><NavLink to="/interventions"><ArrowLeft size={15} /> Interventions</NavLink><span>/</span><span>{data.run_id}</span></div>
+    <div className="run-title"><div><h2>Run / {data.capability_id}</h2><p>Run ID: {data.run_id}</p></div><StatusBadge status={state} /></div>
+    <section className="intervention-banner"><span><Hand size={30} /></span><div>
+      <h3>{live ? "Human intervention required" : "Human intervention recorded"}</h3>
+      <p>{data.reason ?? data.summary ?? "Approval is required before opening Savings."}</p>
+      <small>{live ? "Automation is paused. Take control, click Open in the Savings row of the managed browser, then return control here." : "This historical record has no live browser session."}</small>
+    </div></section>
+    <div className="intervention-grid"><section className="panel live-surface">
+      <div className="panel-heading"><h3>Managed browser preview</h3><span className="panel-count">Preview only</span></div>
+      {live ? <div className="surface-frame"><div className="browser-chrome"><i /><i /><i /><span>Interact in the managed browser window</span></div>
+        {previewUnavailable ? <p>Preview unavailable. If you closed the browser, return control to record the failure or stop the session.</p> :
+          <img src={`${endpoint}/view?generation=${data.generation ?? 0}&revision=${viewRevision}`}
+            alt="Read-only preview of the managed browser" onError={() => setPreviewUnavailable(true)} />}
+      </div> : <div className="historical-surface"><h3>Live surface closed</h3><p>Review the run evidence for the recorded outcome.</p></div>}
+    </section><aside className="panel intervention-details"><div className="panel-heading"><h3>Intervention Details</h3></div><dl>
+      <div><dt>Application</dt><dd>{data.application ?? "CoreBank Legacy"}</dd></div>
+      <div><dt>Current step</dt><dd>{data.blocked_action ?? "Open Savings"}</dd></div>
+      <div><dt>Controller</dt><dd>{live ? (human ? "Human reviewer" : "Automation paused") : "Session closed"}</dd></div>
+      <div><dt>Handoff state</dt><dd>{state}</dd></div>
+      <div><dt>Generation</dt><dd>{data.generation ?? data.generation_after ?? "Recorded in evidence"}</dd></div>
+      <div><dt>Surface session</dt><dd className="mono">{data.surface_session_id ?? "Recorded in evidence"}</dd></div>
+      <div><dt>Replay result</dt><dd>{completion ?? data.replay_result ?? "Pending"}</dd></div>
+      {outputs && <><div><dt>Balance (minor units)</dt><dd>{outputs.balance_minor_units}</dd></div>
+        <div><dt>Currency</dt><dd>{outputs.currency}</dd></div></>}
+    </dl><div className="audit-note"><span><strong>Direct browser handoff</strong><small>Human clicks happen in the browser. Passive observations are separate from gateway actions. Fresh state decides whether Replay can resume.</small></span></div></aside></div>
+    {live && <section className="operator-bar"><div><strong>{human ? "You control the managed browser" : "Ready to transfer control"}</strong>
+      <small>{data.browser_headless ? "Headless test mode: restart with CAPABILITY_RUNNER_BROWSER_HEADLESS=false for a visible browser." : "Switch to the Capability Runner managed browser window. Click Open in the Savings row, then return here."}</small></div>
+      <div className="operator-actions">
+        <button className="button button-secondary" type="button" disabled={busy} onClick={() => transition(human ? "focus-browser" : "take-control")}>
+          <Hand size={17} />{human ? "Focus live browser" : "Take control"}</button>
+        <button className="button button-primary" type="button" disabled={busy || !human} onClick={() => transition("return-control")}>
+          <Check size={17} />Return control to automation</button>
+        <button className="button button-danger" type="button" disabled={busy} onClick={() => transition("stop")}><Square size={15} />Stop</button>
+      </div></section>}
+    {message && <p role="status" className={completion && completion !== "SUCCESS" ? "inline-error" : "audit-note"}>{message}</p>}
+  </div>;
 }

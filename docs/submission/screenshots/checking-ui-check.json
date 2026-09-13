@@ -1,0 +1,29 @@
+{
+  "application": "bank-b",
+  "product": "checking",
+  "checks": {},
+  "passed": true,
+  "run_id": "discovery-fdd34a0aeb494281abf1813700b73855",
+  "status": "SUCCESS",
+  "reason_code": "COMPLETED",
+  "model_calls": 4,
+  "same_session": true,
+  "distinct_visible_frames": 4,
+  "live_visible": true,
+  "replay": {
+    "business_outcome_code": null,
+    "checkpoint": null,
+    "fresh_browser": true,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "balance_minor_units": 15840,
+      "currency": "USD"
+    },
+    "reason_code": null,
+    "replay_model_calls": 0,
+    "run_id": "replay-526f15f18daa4ac7a1b68a25ab3d5c16",
+    "step_id": null,
+    "steps_attempted": 3,
+    "summary": "Declared success conditions were met."
+  }
+}

@@ -108,6 +108,8 @@ def main() -> None:
             assert replay["replay_model_calls"] == 0
             page.locator(".replay-outcome").wait_for()
             page.locator(".replay-outcome").scroll_into_view_if_needed()
+            page.evaluate("window.scrollTo({top: 0, behavior: 'instant'})")
+            page.wait_for_function("window.scrollY === 0")
             page.screenshot(path=output / f"{label}-replay.png", full_page=True)
             report["replay"] = replay
             if app == "corebank-known":
@@ -119,6 +121,8 @@ def main() -> None:
                 outcome = exceptional.value.json()
                 assert outcome["business_outcome_code"] == "MEMBER_NOT_FOUND", outcome
                 page.get_by_text("MEMBER_NOT_FOUND", exact=True).wait_for()
+                page.evaluate("window.scrollTo({top: 0, behavior: 'instant'})")
+                page.wait_for_function("window.scrollY === 0")
                 page.screenshot(path=output / "business-outcome.png", full_page=True)
                 report["business_outcome"] = outcome["business_outcome_code"]
             report["passed"] = True

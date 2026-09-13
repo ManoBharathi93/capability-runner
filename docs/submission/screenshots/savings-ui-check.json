@@ -1,0 +1,30 @@
+{
+  "application": "corebank-known",
+  "product": "savings",
+  "checks": {},
+  "passed": true,
+  "run_id": "discovery-9e44b3db5f4d489591ca4e0460958c28",
+  "status": "SUCCESS",
+  "reason_code": "COMPLETED",
+  "model_calls": 5,
+  "same_session": true,
+  "distinct_visible_frames": 6,
+  "live_visible": true,
+  "replay": {
+    "business_outcome_code": null,
+    "checkpoint": null,
+    "fresh_browser": true,
+    "outcome": "SUCCESS",
+    "outputs": {
+      "balance_minor_units": 438221,
+      "currency": "USD"
+    },
+    "reason_code": null,
+    "replay_model_calls": 0,
+    "run_id": "replay-d548d1e77f974c0c99ea0bfb709b5b54",
+    "step_id": null,
+    "steps_attempted": 4,
+    "summary": "Declared success conditions were met."
+  },
+  "business_outcome": "MEMBER_NOT_FOUND"
+}

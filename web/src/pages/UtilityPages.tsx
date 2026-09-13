@@ -26,8 +26,11 @@ export function SessionsPage() {
     <section className="panel">{active.length ? <div className="run-list">{active.map((item) =>
       <NavLink className="run-row" to={`/interventions/${item.intervention_id}`} key={item.intervention_id}>
         <span className="square-icon"><Radio size={17} /></span>
-        <span><strong>{item.state_label}</strong><small>{item.run_id}</small></span>
-        <span>{item.capability_id}</span><StatusBadge status="Active" />
+        <span><strong>{item.state_label}</strong><small>{item.run_id}</small>
+          <small>Session: {item.surface_session_id ?? "Unavailable"}</small>
+          <small>Controller: {item.owner_kind ?? "unknown"} · generation {item.generation ?? "unknown"}</small></span>
+        <span>{item.application ?? item.capability_id}</span>
+        <StatusBadge status={item.control_state ?? "Active"} />
       </NavLink>)}</div> : <EmptyState icon={<Radio size={27} />} title="No active sessions"
         copy="Open Interventions and choose Start Demo Handoff to begin. Completed or stopped sessions remain in intervention history." />}
     </section>

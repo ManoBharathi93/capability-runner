@@ -118,6 +118,7 @@ class _InterventionExecution:
     automation_counter: _ExecutedActionCounter
     operator_counter: _ExecutedOperatorActionCounter
     initial_result: ReplayResult
+    manager: InterventionManager
 
 
 class _ExecutedActionCounter:
@@ -653,9 +654,11 @@ async def prepare_intervention(
     base_url: str,
     run_id: str,
     recorder: EvidenceRecorder,
+    headless: bool = True,
+    grant_operator: bool = True,
 ) -> _InterventionExecution:
     profile = build_core_bank_demo_profile(f"{base_url}/")
-    adapter = BrowserSurfaceAdapter(headless=True)
+    adapter = BrowserSurfaceAdapter(headless=headless)
     controller = SessionController()
     automation_gateway = ActionGateway(
         policy_guard=PolicyGuard(build_demo_automation_policy(require_savings_approval=True)),
@@ -721,14 +724,15 @@ async def prepare_intervention(
     if suspended.intervention is None:
         await adapter.aclose()
         raise DemoRunError("Replay continuation was not created.")
-    granted = await manager.grant_operator_control(
-        suspended.intervention.intervention_id,
-        operator_id="reviewer",
-        display_name="Reviewer demo",
-    )
-    if granted.outcome != "OPERATOR_CONTROLLED":
-        await adapter.aclose()
-        raise DemoRunError("Operator control was not granted.")
+    if grant_operator:
+        granted = await manager.grant_operator_control(
+            suspended.intervention.intervention_id,
+            operator_id="reviewer",
+            display_name="Reviewer demo",
+        )
+        if granted.outcome != "OPERATOR_CONTROLLED":
+            await adapter.aclose()
+            raise DemoRunError("Operator control was not granted.")
     console = OperatorConsoleService(
         intervention_manager=manager,
         operator_gateway=operator_counter,
@@ -758,6 +762,7 @@ async def prepare_intervention(
         automation_counter=automation_counter,
         operator_counter=operator_counter,
         initial_result=initial_result,
+        manager=manager,
     )
 
 
@@ -770,6 +775,8 @@ async def close_intervention(live: _InterventionExecution) -> None:
 def verify_intervention(
     live: _InterventionExecution,
     resumed: ReplayContinuationResult,
+    *,
+    direct_browser: bool = False,
 ) -> None:
     _require(live.initial_result.reason_code == "APPROVAL_REQUIRED", "Replay did not block.")
     _require(live.record.surface_session == live.session, "Surface session changed.")
@@ -797,7 +804,8 @@ def verify_intervention(
         "Replay repeated a pre-intervention automation action.",
     )
     _require(
-        live.operator_counter.executed == Counter({"member.accounts.savings": 1}),
+        live.operator_counter.executed
+        == (Counter() if direct_browser else Counter({"member.accounts.savings": 1})),
         "Operator action count was unexpected.",
     )
 

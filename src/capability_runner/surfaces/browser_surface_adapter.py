@@ -5,8 +5,9 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlsplit
 from uuid import uuid4
 
@@ -14,6 +15,7 @@ from playwright.async_api import (
     Browser,
     BrowserContext,
     ElementHandle,
+    Frame,
     FrameLocator,
     JSHandle,
     Locator,
@@ -106,6 +108,31 @@ class _SessionState:
     nodes: dict[str, ElementHandle] = field(default_factory=lambda: dict[str, ElementHandle]())
     revisions: list[JSHandle] = field(default_factory=lambda: list[JSHandle]())
     browser_scope: BrowserScope | None = None
+    context_id: str = field(default_factory=lambda: uuid4().hex)
+    page_id: str = field(default_factory=lambda: uuid4().hex)
+    human_sink: Callable[[dict[str, str | bool]], None] | None = None
+    human_capture_installed: bool = False
+    human_event_count: int = 0
+    frame_ids: dict[Frame, str] = field(default_factory=lambda: dict[Frame, str]())
+
+
+# No values, text, selectors, URLs, or keystrokes cross this binding. Event capture
+# is passive and best effort; only fresh resume validation can authorize automation.
+_HUMAN_CAPTURE_SCRIPT = """(() => {
+  if (window.__crHumanCaptureInstalled) return;
+  window.__crHumanCaptureInstalled = true;
+  for (const kind of ['click', 'change']) document.addEventListener(kind, event => {
+    if (!event.isTrusted) return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const type = (target.getAttribute('type') || '').toLowerCase();
+    const autocomplete = (target.getAttribute('autocomplete') || '').toLowerCase();
+    if (['password', 'hidden'].includes(type) || autocomplete === 'one-time-code') return;
+    const tag = target.tagName.toLowerCase();
+    window.__crHumanObserved({kind, tag: ['a', 'button', 'input', 'select', 'textarea']
+      .includes(tag) ? tag : 'element', value_redacted: kind === 'change'}).catch(() => {});
+  }, true);
+})()"""
 
 
 class BrowserSurfaceAdapter:
@@ -536,6 +563,73 @@ class BrowserSurfaceAdapter:
             height=height,
         )
 
+    async def browser_identity(self, session: SurfaceSessionRef) -> dict[str, str | bool]:
+        state = await self._require_session(session)
+        return {
+            "surface_session_id": session.surface_session_id,
+            "browser_context_id": state.context_id,
+            "page_id": state.page_id,
+            "browser_headless": self._headless,
+        }
+
+    async def focus_browser(self, session: SurfaceSessionRef) -> None:
+        state = await self._require_session(session)
+        await state.page.bring_to_front()
+
+    async def start_human_observation(
+        self,
+        session: SurfaceSessionRef,
+        sink: Callable[[dict[str, str | bool]], None],
+    ) -> None:
+        state = await self._require_session(session)
+
+        def observed(frame: Frame, kind: str, tag: str, redacted: bool) -> None:
+            if state.human_sink is None or state.human_event_count >= 200:
+                return
+            state.human_event_count += 1
+            state.human_sink(
+                {
+                    "surface_session_id": session.surface_session_id,
+                    "page_id": state.page_id,
+                    "frame_id": state.frame_ids.setdefault(frame, uuid4().hex),
+                    "action_type": kind,
+                    "element_type": tag,
+                    "value_redacted": redacted,
+                }
+            )
+
+        if not state.human_capture_installed:
+
+            def on_event(source: dict[str, Any], payload: Any) -> None:
+                if source.get("page") is not state.page or not isinstance(payload, dict):
+                    return
+                safe_payload = cast(dict[str, object], payload)
+                kind, tag = safe_payload.get("kind"), safe_payload.get("tag")
+                if not isinstance(kind, str) or not isinstance(tag, str):
+                    return
+                if kind not in {"click", "change"}:
+                    return
+                if tag not in {"a", "button", "input", "select", "textarea", "element"}:
+                    return
+                observed(source["frame"], kind, tag, kind == "change")
+
+            # Playwright's binding callback return annotation is incomplete.
+            await state.page.expose_binding("__crHumanObserved", on_event)  # pyright: ignore[reportUnknownMemberType]
+            await state.page.add_init_script(_HUMAN_CAPTURE_SCRIPT)
+            for frame in state.page.frames:
+                await frame.evaluate(_HUMAN_CAPTURE_SCRIPT)
+            state.page.on(
+                "framenavigated", lambda frame: observed(frame, "navigation", "frame", False)
+            )
+            state.human_capture_installed = True
+        state.human_sink = sink
+
+    async def stop_human_observation(self, session: SurfaceSessionRef) -> None:
+        # Disable even if the physical window was closed. Never replace its page.
+        state = self._sessions.get(session.surface_session_id)
+        if state is not None:
+            state.human_sink = None
+
     async def close_surface_session(self, session: SurfaceSessionRef) -> None:
         async with self._lock:
             state = self._sessions.pop(session.surface_session_id, None)
@@ -574,7 +668,7 @@ class BrowserSurfaceAdapter:
     async def _require_session(self, session: SurfaceSessionRef) -> _SessionState:
         async with self._lock:
             state = self._sessions.get(session.surface_session_id)
-        if state is None:
+        if state is None or state.page.is_closed():
             raise BrowserSurfaceSessionClosedError(
                 f"surface session {session.surface_session_id} is closed"
             )

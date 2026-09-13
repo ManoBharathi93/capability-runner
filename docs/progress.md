@@ -1,5 +1,56 @@
 # Progress
 
+## Direct native-browser handoff and screenshot guide — 2026-09-13
+
+The owner's attached instruction explicitly authorizes physical human control of the existing
+headed browser. This supersedes the former gateway-only rule **for physical human input only**.
+Automated actions still pass through Action Gateway. The audit and trade-offs are in
+[direct-browser-handoff.md](subsystems/direct-browser-handoff.md), **ACCEPTED BASELINE**.
+No account-creation functionality, voice, Teach, remote co-browsing, or authentication was added.
+
+Implementation: product start pauses before Savings. Take control delegates ownership and
+quiescence to the existing manager/controller; Focus brings the existing Page forward. The
+preview is non-interactive. Return disables passive capture, enters resume_requested, and
+runs fresh validation before restoring automation with a new generation. Failed validation
+and browser closure terminate the attempt without replacement or success outputs.
+Sessions displays active handoff identities and ownership. The CLI operator gateway remains
+an explicitly separate controlled test seam.
+HTTP transitions recheck active membership after obtaining the per-intervention lock, so a
+queued duplicate cannot use a runner that an earlier request has already closed.
+
+Completed results are **VERIFIED BEHAVIOR**:
+
+| Check | Completed result | Evidence |
+| --- | --- | --- |
+| Full regression | `uv run pytest -q --junitxml=var/direct-browser-full-tests.xml`: 380 passed, 8 live deselected, 388.61 seconds on final rerun. | Captured output and local JUnit; includes six cases in `tests/end_to_end/test_direct_browser_handoff.py` |
+| Direct browser boundary | Same Page/BrowserContext/surface; generations 0→1→2→3; automatic fill/search/member-open each once; automatic Savings zero; operator gateway zero; fixed oracle 98765/USD. All three provider adapters patched to fail on any model invocation; zero invocations observed. | Direct-browser test module |
+| Negative and privacy checks | Unchanged page, wrong account, closed page and stale automation rejected. Missing capture still allows a valid fresh result. Completed edit and selection record redacted indicators; password/OTP controls excluded. Existing quiescence, duplicate continuation and ownership tests also passed. | Direct-browser tests; full controller/manager/continuation suites |
+| Concurrent HTTP handback | Two callers obtained the same active intervention before a held transition lock was released. Exactly one returned SUCCESS and the queued duplicate returned INTERVENTION_NOT_ACTIVE; the three initial browser actions still each occurred once. | Controlled real-browser experiment; `var/duplicate-handoff-check.json` |
+| Headed product UI | `uv run python scripts/verify_workspace_handoff.py --headed`: same identities, successful model-free continuation, no repeats, Sessions navigation/removal and six mobile routes passed. | [Curated native handoff](../evidence/direct-browser/ui-check.json) |
+| Frontend | 11 tests passed; TypeScript and Vite build passed. Covers actual ownership controls, no Savings proxy button, and success/failure rendering. | `web/src/App.test.tsx`, `web/src/pages/InterventionsPage.test.tsx`; captured commands |
+| Static checks | Ruff passed; Pyright zero errors/warnings; `uv lock --check` passed, 31 packages resolved. | Captured commands |
+| Documentation/privacy | 63 local Markdown links resolve; no configured credential/private endpoint found in changed text. REPORT retains exactly the seven required headings and 1,829 words. Ten published PNGs were inspected as synthetic UI captures. | Final link/credential scan; screenshot provenance |
+| Fresh real-provider savings | Five Discovery calls, six changing frames, different-input Replay 438221/USD and MEMBER_NOT_FOUND, zero Replay calls. | [Screenshot run record](submission/screenshots/savings-ui-check.json) |
+| Fresh real-provider checking | Four Discovery calls, four changing frames, different-input Replay 15840/USD, zero Replay calls. | [Screenshot run record](submission/screenshots/checking-ui-check.json) |
+
+The first privacy check used Playwright select_option, whose programmatic change did not pass
+the trusted-input filter. Native ArrowDown selection verified the intended physical-input behavior;
+the final full suite passed. One concurrent checking submission was rejected before a run ID
+was issued (HTTP 422 / DISCOVERY_NOT_STARTED). A separate subsequent checking submission
+completed; the rejected attempt is not counted as a successful Discovery.
+
+The [README-linked screenshot guide](submission/test-product.md) maps assignment scenarios
+to inputs, expected outputs, actual images and harness-only edge cases. The shortened
+[demo narration](submission/demo-walkthrough.md) distinguishes direct human input from
+automated evidence. Historical operator-HTTP records below remain historical.
+
+Physical acceptance: **MANUAL_ACCEPTANCE_REQUIRED**. Headed Playwright input is an automated
+stand-in. The local product was refreshed and the owner received the physical acceptance steps;
+no physical response has been recorded here. OS focus is best effort; physical input is outside
+gateway policy and cannot be OS-locked after handback. Capture is bounded, best effort and not
+a tamper-proof audit channel. Active ownership remains process-local. Voice and Teach are not
+implemented.
+
 ## Product navigation and banking depth repair — 2026-09-13
 
 The owner authorized repairing Interventions/Sessions and explicitly selected existing-sandbox

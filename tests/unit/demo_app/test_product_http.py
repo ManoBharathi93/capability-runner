@@ -44,6 +44,12 @@ class RecordingWorkflows:
     def get_view(self, intervention_id: str) -> tuple[bytes, str]:
         return b"\x89PNG\r\n\x1a\nview", "image/png"
 
+    def take_control(self, intervention_id: str) -> dict[str, object]:
+        return {"intervention_id": intervention_id, "control_state": "operator_controlled"}
+
+    def focus_browser(self, intervention_id: str) -> dict[str, object]:
+        return self.get_intervention(intervention_id)
+
     def execute_action(
         self,
         intervention_id: str,
