@@ -22,7 +22,9 @@ def main() -> None:
         intervention_id = None
         completed = False
         try:
-            page.goto(base + "/interventions")
+            page.goto(base + "//interventions")
+            page.get_by_role("button", name="Start Demo Handoff").wait_for()
+            assert page.url == base + "/interventions"
             with page.expect_response(
                 lambda response: (
                     response.url.endswith("/api/interventions")
@@ -32,6 +34,9 @@ def main() -> None:
                 page.get_by_role("button", name="Start Demo Handoff").click()
             initial = started.value.json()
             intervention_id = initial["intervention_id"]
+            page.get_by_role("link", name="Sessions", exact=True).click()
+            page.get_by_role("button", name="Refresh sessions").wait_for()
+            page.locator(f'a.run-row[href="/interventions/{intervention_id}"]').click()
             page.get_by_alt_text("Current managed browser surface").wait_for()
             page.get_by_role("button", name="Take Control", exact=True).click()
             page.screenshot(path=output / "handoff-active.png", full_page=True)
@@ -40,6 +45,10 @@ def main() -> None:
             ) as operated:
                 page.get_by_role("button", name="Savings", exact=True).click()
             assert operated.value.json()["executed"] is True
+            page.wait_for_function(
+                "document.querySelector('img[alt=\"Current managed browser surface\"]')"
+                "?.getAttribute('src').includes('revision=1')"
+            )
             with page.expect_response(
                 lambda response: response.url.endswith("/return-control")
             ) as returned:
@@ -54,9 +63,13 @@ def main() -> None:
             completed = True
             page.locator(".completion-bar").wait_for()
             page.screenshot(path=output / "handoff-completed.png", full_page=True)
+            page.get_by_role("link", name="Sessions", exact=True).click()
+            page.get_by_role("button", name="Refresh sessions").wait_for()
+            assert page.locator(f'a.run-row[href="/interventions/{intervention_id}"]').count() == 0
             page.set_viewport_size({"width": 390, "height": 844})
             checked = []
-            for route in ("/", "/discover", "/capabilities", "/runs", "/interventions"):
+            routes = ("/", "/discover", "/capabilities", "/runs", "/interventions", "/sessions")
+            for route in routes:
                 page.goto(base + route)
                 page.locator("main").wait_for()
                 assert page.evaluate(
@@ -69,7 +82,10 @@ def main() -> None:
                 ),
                 encoding="utf-8",
             )
-            print("HITL UI continuation and five responsive routes: PASS", flush=True)
+            print(
+                "HITL UI continuation, Sessions navigation and six responsive routes: PASS",
+                flush=True,
+            )
         finally:
             if intervention_id and not completed:
                 page.request.post(base + f"/api/interventions/{intervention_id}/stop")

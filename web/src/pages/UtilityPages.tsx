@@ -14,7 +14,24 @@ export function SessionsPage() {
   if (interventions.loading) return <LoadingState label="Loading current sessions" />;
   if (interventions.error) return <ErrorState message={interventions.error} retry={interventions.reload} />;
   const active = interventions.data?.interventions.filter((item) => item.active) ?? [];
-  return <div className="page-stack page-enter"><section className="page-title"><p className="eyebrow">PROCESS-LOCAL STATE</p><h2>Sessions</h2><p>Only currently managed intervention sessions are observable here. No durable global session registry is implied.</p></section><section className="panel">{active.length ? <div className="run-list">{active.map((item) => <NavLink className="run-row" to={`/interventions/${item.intervention_id}`} key={item.intervention_id}><span className="square-icon"><Radio size={17} /></span><span><strong>{item.state_label}</strong><small>{item.run_id}</small></span><span>{item.capability_id}</span><StatusBadge status="Active" /></NavLink>)}</div> : <EmptyState icon={<Radio size={27} />} title="No active sessions" copy="Start a demo handoff from Interventions to open one managed session." />}</section></div>;
+  return <div className="page-stack page-enter">
+    <section className="page-title split">
+      <div><p className="eyebrow">LIVE HANDOFFS</p><h2>Sessions</h2>
+        <p>Active intervention sessions appear here. Discovery runs are shown on Discover and Runs.</p></div>
+      <div className="artifact-actions">
+        <button className="button button-secondary" type="button" onClick={interventions.reload}>Refresh sessions</button>
+        <NavLink className="button button-primary" to="/interventions">Open Interventions</NavLink>
+      </div>
+    </section>
+    <section className="panel">{active.length ? <div className="run-list">{active.map((item) =>
+      <NavLink className="run-row" to={`/interventions/${item.intervention_id}`} key={item.intervention_id}>
+        <span className="square-icon"><Radio size={17} /></span>
+        <span><strong>{item.state_label}</strong><small>{item.run_id}</small></span>
+        <span>{item.capability_id}</span><StatusBadge status="Active" />
+      </NavLink>)}</div> : <EmptyState icon={<Radio size={27} />} title="No active sessions"
+        copy="Open Interventions and choose Start Demo Handoff to begin. Completed or stopped sessions remain in intervention history." />}
+    </section>
+  </div>;
 }
 
 export function EvidencePage() {

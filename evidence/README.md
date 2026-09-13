@@ -21,6 +21,14 @@ relative artifact path is preserved by retaining the original runtime directory 
 
 ## Privacy and interpretation
 
+The [checking UI summary](checking/ui-summary.json), [generated capability](checking/capability.json),
+[Discovery log](checking/discovery.jsonl), and [fresh Replay log](checking/replay.jsonl) are from
+the 2026-09-13 real-provider LegacyBank B checking run. Discovery used four model calls and three
+actions; Replay returned `15840 / USD` for a different synthetic customer with zero model calls.
+These four files were copied unchanged from the run and UI-check output. The capability is a
+reviewable definition; its separate generated application binding remains in the local run package.
+This proves checking as well as savings, not account creation or three unrelated banking workflows.
+
 The generated capability contains parameter references, not invocation member IDs or balances,
 and contains no browser selectors, provider identity, endpoint, transcript, or executable code.
 The JSONL omits fill values and provider payloads. The displayed balance is synthetic output and

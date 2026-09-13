@@ -19,13 +19,20 @@ Curated evidence under `evidence/` includes a real provider-backed Discovery and
 The latest recorded verification is:
 
 - 371 ordinary Python tests passed; 8 opt-in live tests were deselected by default;
-- 7 frontend tests passed;
+- 9 frontend tests passed;
 - TypeScript typecheck and the Vite production build passed;
 - Ruff and Pyright passed;
 - the Python lock consistency check passed;
 - the deterministic banking evaluation passed 13 of 13 cases with nine matching fresh Replay results, three generated profiles, zero false successes, zero wrong-entity successes, zero unsafe actions, and zero Replay model calls.
 
 The exact commands and dated evidence are in [progress.md](../progress.md). Real-provider successes and failures are recorded separately; no reliability percentage is inferred from a small number of attempts.
+
+On 2026-09-13, 18 focused package, Replay, and product API tests passed. The package checks cover
+independent savings/checking output values, stored Replay without provider configuration, and
+wrong-account completion rejection in both directions. Real UI checks passed for savings,
+checking, and same-session handoff. Interventions navigation, repeated-slash routes, Sessions
+refresh, and operator-preview refresh were repaired. This is a focused verification update,
+not a rerun of the full Python suite.
 
 ## Reviewer entry points
 

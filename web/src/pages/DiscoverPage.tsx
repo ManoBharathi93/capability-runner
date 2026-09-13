@@ -118,6 +118,15 @@ export function DiscoverPage() {
             <option value="bank-b">LegacyBank B · new-app discovery</option>
             <option value="new">New legacy web app</option>
           </select></label>
+          <p className="form-footnote">{application === "corebank-known"
+            ? "Known workflow: savings balance. Try member 67890, then replay with 12345."
+            : application === "bank-b"
+              ? "Demo goals: find the savings or checking balance for customer 67890."
+              : application === "corebank"
+                ? "Explore the demo's member and account enquiry screens."
+                : "The selected application must provide the controls needed for your goal."}
+            {application !== "new" && " Demo member IDs: 12345, 67890, and restricted member 55555. Account creation is not available in these demo applications."}
+          </p>
           {application === "new" && <label>Application URL<input type="url" value={url} onChange={event => setUrl(event.target.value)} placeholder="https://allowed-sandbox.example/" required /></label>}
           <label>Workflow goal<textarea value={goal} onChange={event => setGoal(event.target.value)} rows={4} maxLength={4000}
             placeholder="Describe the information you want to find…" /></label>

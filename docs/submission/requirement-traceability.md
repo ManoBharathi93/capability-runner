@@ -77,15 +77,17 @@ discovery-to-replay story.
 
 - The genuine provider-backed P3 live test is recorded as previously passed in
   `docs/progress.md`; it was not rerun during P5.1.
-- The current collection has 379 cases: 371 ordinary cases and 8 opt-in live cases.
+- The current collection has 382 cases: 374 ordinary cases and 8 opt-in live cases.
 - Default pytest excludes `live`, so ordinary tests do not call external model providers. Browser
   integration tests use local Chromium and a loopback Flask server.
 - `playwright` installation does not install Chromium automatically. The root README includes the
   required explicit browser-install command.
 - `.env.example` contains all eight provider variable names expected by provider documentation;
   values are empty/placeholders. This proves template shape, not credential validity.
-- The latest completed full gates are 371 passed with 8 live cases deselected; 7 frontend tests,
-  TypeScript typecheck, production build, Ruff, Pyright, and lock consistency passed.
+- The last completed full Python suite passed 371 tests with 8 live cases deselected. The
+  2026-09-13 focused package/Replay/API suite passed 18 tests, including the three newly added
+  cases. Nine frontend tests, TypeScript typecheck, production build, Ruff, and Pyright passed;
+  lock consistency is unchanged from its prior recorded pass.
 - P5.4a.1 changed curated evidence and documentation only. Its focused evidence regression passed
   17 tests; all three refreshed through-line files parse, match their runtime sources byte-for-byte,
   and contain zero prohibited privacy matches.

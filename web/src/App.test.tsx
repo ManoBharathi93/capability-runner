@@ -1,6 +1,6 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "./App";
@@ -54,6 +54,37 @@ afterEach(() => {
 });
 
 describe("Capability Runner product frontend", () => {
+  it("normalizes repeated slashes and preserves the local query and fragment", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json({ interventions: [] })));
+    function LocationProbe() {
+      const location = useLocation();
+      return <output aria-label="Current location">{location.pathname + location.search + location.hash}</output>;
+    }
+    render(<MemoryRouter initialEntries={["//interventions?from=sessions#history"]}>
+      <App /><LocationProbe />
+    </MemoryRouter>);
+    expect(await screen.findByRole("button", { name: "Start Demo Handoff" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Current location")).toHaveTextContent("/interventions?from=sessions#history");
+    expect(screen.queryByText("Page not found")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Interventions" })).toHaveClass("active");
+  });
+
+  it("offers a handoff entry point and refreshes only active intervention sessions", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(json({ interventions: [] }))
+      .mockResolvedValueOnce(json({ interventions: [
+        { intervention_id: "live-1", run_id: "run-live", state_label: "Awaiting operator", active: true },
+        { intervention_id: "past-1", run_id: "run-past", state_label: "Completed", active: false },
+      ] }));
+    vi.stubGlobal("fetch", fetchMock);
+    renderAt("/sessions");
+    expect(await screen.findByText("No active sessions")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open Interventions" })).toHaveAttribute("href", "/interventions");
+    await userEvent.click(screen.getByRole("button", { name: "Refresh sessions" }));
+    expect(await screen.findByText("run-live")).toBeInTheDocument();
+    expect(screen.queryByText("run-past")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Awaiting operator/ })).toHaveAttribute("href", "/interventions/live-1");
+  });
   it("renders backend-owned home metrics and navigates", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => String(input).includes("/api/capabilities")
       ? json({ capabilities: [capability] })

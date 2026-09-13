@@ -4,6 +4,7 @@ import {
   ChevronDown,
   FileText,
   Home,
+  Hand,
   Menu,
   MessageSquare,
   Play,
@@ -13,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
 import { CapabilitiesPage } from "./pages/CapabilitiesPage";
 import { DiscoverPage } from "./pages/DiscoverPage";
@@ -28,6 +29,7 @@ const navigation = [
   { label: "Runs", to: "/runs", icon: Play },
   { label: "Capabilities", to: "/capabilities", icon: Boxes },
   { label: "Sessions", to: "/sessions", icon: MessageSquare },
+  { label: "Interventions", to: "/interventions", icon: Hand },
   { label: "Evidence", to: "/evidence", icon: FileText },
   { label: "Settings", to: "/settings", icon: Settings },
 ] as const;
@@ -38,6 +40,7 @@ const routeTitles: Record<string, string> = {
   "/runs": "Runs",
   "/capabilities": "Capabilities",
   "/sessions": "Sessions",
+  "/interventions": "Interventions",
   "/evidence": "Evidence",
   "/settings": "Settings",
   "/teach": "Teach",
@@ -59,9 +62,13 @@ function Shell() {
   const [search, setSearch] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
-  const detailUsesHome = /^\/runs\/.+/.test(location.pathname) || location.pathname.startsWith("/interventions/");
+  const detailUsesHome = /^\/runs\/.+/.test(location.pathname);
   const exactTitle = routeTitles[location.pathname];
-  const title = exactTitle ?? (location.pathname.startsWith("/capabilities") ? "Capabilities" : location.pathname.startsWith("/runs") || location.pathname.startsWith("/interventions") ? "Home" : "Capability Runner");
+  const title = exactTitle ?? (location.pathname.startsWith("/capabilities") ? "Capabilities" : location.pathname.startsWith("/interventions/") ? "Interventions" : location.pathname.startsWith("/runs") ? "Home" : "Capability Runner");
+  const pathname = location.pathname.replace(/\/{2,}/g, "/");
+  if (pathname !== location.pathname) {
+    return <Navigate replace to={{ pathname, search: location.search, hash: location.hash }} />;
+  }
 
   return (
     <div className="app-shell">

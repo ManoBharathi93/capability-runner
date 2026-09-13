@@ -1,5 +1,42 @@
 # Progress
 
+## Product navigation and banking depth repair — 2026-09-13
+
+The owner authorized repairing Interventions/Sessions and explicitly selected existing-sandbox
+verification: savings, checking, and approval/HITL. No account-creation business functionality
+was added. The decision and boundary tests are in
+[product-navigation-repair.md](subsystems/product-navigation-repair.md).
+
+Implementation: Interventions now appears in the sidebar; repeated pathname slashes normalize
+internally while preserving query and fragment. Sessions provides an entry point and manual
+refresh, and explicitly lists active handoff sessions rather than all Discovery sessions.
+Operator actions refresh the preview. Discover documents supported goals and fixture IDs.
+
+Completed checks are **VERIFIED BEHAVIOR**:
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Frontend regression and build | 9 tests passed; TypeScript and production build passed. Covers repeated-slash routing, active navigation, Sessions empty/active refresh, and historical handoffs. | `web/src/App.test.tsx`; captured test/build output |
+| Real product handoff | Same-session SUCCESS, generation 0 to 3, 98765/USD, zero Replay calls, no repeated side effect. Sessions links and removal on completion, preview refresh, and six mobile routes passed. | `var/manual-handoff.json`; run `intervention-e860b24772a34d6ab89c582362693dde` |
+| Real-provider checking UI | SUCCESS, 4 model calls, 3 actions, one managed session with 3 changing frames; different-input fresh Replay 15840/USD, zero Replay calls. | `evidence/checking/`; run `discovery-4c91d558045148f7b1ab20b8d09d0ed5` |
+| Real-provider savings UI | SUCCESS and different-input fresh Replay 438221/USD with zero calls; unknown input returned MEMBER_NOT_FOUND. Six changing frames in one managed session. | `var/manual-corebank-known.json`; run `discovery-805a113f0c314a78b74a196575ad05e2` |
+| Focused Python regression | 18 passed in 155.75s. Independent fixed savings/checking oracles; saved package replayed through a new workspace with empty provider configuration; wrong member, wrong account in both directions, injection, restricted/expired/slow outcomes, and product API checks. | `var/navigation-depth-tests.xml`; package, browser Replay, and product HTTP test modules |
+| Static checks | Ruff passed and Pyright reported zero errors/warnings. | Captured command output |
+| Current collection | 374 ordinary cases selected, 8 live excluded; 382 total. The full suite was not rerun; the prior full Python baseline remains 371 passed. | `pytest --collect-only -q` |
+
+One additional savings submission was rejected before Discovery because the long-running product
+had retained eight finished workspaces. Read-only status inspection confirmed eight retained and
+zero running Discovery sessions; no active handoff existed. Restarting the idle product freed
+the process-local sessions, after which the savings UI check above passed. Stored packages and
+evidence were preserved. The UI checker now records an HTTP rejection explicitly instead of
+raising an unexplained missing-run-ID error. The eight-workspace limit remains implemented and
+is documented in the manual guide.
+
+The four new checking evidence files were copied unchanged from actual runtime output and passed
+JSON/JSONL parsing and credential, private-path, and invocation-ID scans. Their generated binding
+remains in the local package; the curated capability is an inspection artifact. Older evidence
+and provider failures have not been relabeled as new passes.
+
 ## Current phase
 
 **GENERIC DISCOVERY + LIVE WORKSPACE + EVALUATION: PASS.** The owner's 2026-09-12

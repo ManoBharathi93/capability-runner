@@ -1,0 +1,121 @@
+{
+  "application_requirement": {
+    "application_family": "web_4f8c9e2765be1069",
+    "compatible_variant": null,
+    "surface_kind": "browser"
+  },
+  "business_outcomes": [],
+  "capability_id": "workflow_b1ab20b8d09d0ed5",
+  "capability_version": "1.0.0",
+  "description": "Observed browser workflow with grounded output and identity checkpoints.",
+  "inputs": [
+    {
+      "max_length": null,
+      "min_length": null,
+      "name": "customer_reference",
+      "pattern": null,
+      "required": true,
+      "sensitive": true,
+      "value_type": "STRING"
+    }
+  ],
+  "name": "Discovered balance minor units / currency",
+  "outputs": [
+    {
+      "name": "balance_minor_units",
+      "source": {
+        "kind": "target_text",
+        "parser": "currency_minor_units",
+        "target": {
+          "value": "page.xbd6d4fa3.available_balance"
+        }
+      },
+      "value_type": "INTEGER"
+    },
+    {
+      "name": "currency",
+      "source": {
+        "kind": "target_text",
+        "parser": "currency_code",
+        "target": {
+          "value": "page.xbd6d4fa3.available_balance"
+        }
+      },
+      "value_type": "CURRENCY_CODE"
+    }
+  ],
+  "schema_version": 1,
+  "steps": [
+    {
+      "action": {
+        "kind": "fill",
+        "target": {
+          "value": "page.x5c5550d8.customer_reference"
+        },
+        "value": {
+          "kind": "input",
+          "name": "customer_reference"
+        }
+      },
+      "kind": "action",
+      "postcondition": null,
+      "precondition": null,
+      "retry_policy": null,
+      "step_id": "fill_page_x5c5550d8_customer_reference"
+    },
+    {
+      "action": {
+        "kind": "click",
+        "target": {
+          "value": "page.x9874a72d.retrieve_customer"
+        }
+      },
+      "kind": "action",
+      "postcondition": null,
+      "precondition": null,
+      "retry_policy": null,
+      "step_id": "click_page_x9874a72d_retrieve_customer"
+    },
+    {
+      "action": {
+        "kind": "click",
+        "target": {
+          "value": "page.x46d1f02d.view_checking_holding"
+        }
+      },
+      "kind": "action",
+      "postcondition": null,
+      "precondition": null,
+      "retry_policy": null,
+      "step_id": "click_page_x46d1f02d_view_checking_holding"
+    }
+  ],
+  "success_conditions": [
+    {
+      "expected": {
+        "kind": "input",
+        "name": "customer_reference"
+      },
+      "kind": "target_text_equals",
+      "target": {
+        "value": "page.xeb59f8c9.customer_reference"
+      }
+    },
+    {
+      "kind": "target_visible",
+      "target": {
+        "value": "page.xbd6d4fa3.available_balance"
+      }
+    },
+    {
+      "expected": {
+        "kind": "literal",
+        "value": "Checking"
+      },
+      "kind": "target_text_equals",
+      "target": {
+        "value": "page.x6200db57.product_category"
+      }
+    }
+  ]
+}

@@ -103,6 +103,14 @@ If time or provider variability makes this live step unreliable, show the retain
 
 ## 7:05-8:10 - Same-session human handoff
 
+For an additional banking outcome before handoff, use LegacyBank B with
+`Find the checking balance for customer 67890.` Replay with `12345` and show `15840 / USD` and
+zero model calls. Explain that savings and checking have different fixed expected balances; a
+valid-looking savings value must never pass a checking request. This adds roughly a minute.
+
+Interventions is directly accessible in the sidebar. Sessions shows active handoffs and provides
+**Open Interventions** and **Refresh sessions**; an empty list before starting a handoff is expected.
+
 Open `/interventions`, click **Start Demo Handoff**, open the live item, and click **Take Control**. Use **Savings** once and then click **Return Control to Agent**.
 
 > This capability pauses before an approval-required action. The operator receives control of the same managed session and can use only trusted semantic controls. Operator actions still pass through Action Gateway.

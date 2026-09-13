@@ -138,9 +138,10 @@ Run the public live acceptance only with valid provider configuration:
 uv run pytest tests/live/demo/test_demo_through_line.py -m live -q
 ```
 
-The latest recorded baseline is 371 ordinary tests passed, 8 live tests deselected, 7 frontend
-tests passed, the TypeScript check and Vite build passed, Ruff passed, Pyright reported no errors
-or warnings, and the Python dependency lock remained unchanged. See [progress](docs/progress.md) for
+The last full Python baseline is 371 ordinary tests passed with 8 live tests deselected. The latest frontend
+check passed 9 tests. The focused savings/checking, Replay-error, and product API regression passed 18 tests.
+The TypeScript check, Vite build, Ruff, and Pyright also passed. The earlier Python dependency lock
+check remained unchanged. See [progress](docs/progress.md) for
 dated evidence rather than treating this statement as a substitute for a local run.
 
 ## Design boundaries

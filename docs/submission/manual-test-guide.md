@@ -34,6 +34,16 @@ The fixture data used below is:
 
 ## Product UI tests
 
+The assignment's savings, account-opening, and shopping examples are alternatives, not a required
+three-workflow checklist. This sandbox demonstrates savings and checking enquiries plus a real
+approval/handoff scenario. It has no account-creation form, and synthetic member `93604` does not
+exist. Use `67890` for Discovery and `12345` for a different-input Replay.
+
+Interventions is now in the sidebar. Open `/interventions` (repeated slashes also normalize to this
+route), then start a handoff. Sessions lists active intervention sessions only: use **Open
+Interventions** to start one and **Refresh sessions** to update the list. Discovery sessions are
+shown through Discover and Runs; an empty Sessions list is expected when no handoff is active.
+
 Run each Discovery case in a fresh workspace when you want the cleanest evidence. Real provider wording and latency can vary, but the safety and result invariants below must hold.
 
 | ID | Action and input | Expected result |
@@ -144,9 +154,16 @@ With the product running, these scripts drive the real UI and save local review 
 ```powershell
 uv run python scripts/verify_discovery_workspace.py --application corebank-known
 uv run python scripts/verify_discovery_workspace.py --application bank-b
+uv run python scripts/verify_discovery_workspace.py --application bank-b --product checking
 uv run python scripts/verify_workspace_handoff.py
 ```
 
-The first two require the configured provider and verify changing same-session imagery, artifact creation, and different-input Replay. The handoff script verifies typed operator controls, continuation, and five mobile routes without a model. Add `--base-url http://127.0.0.1:5003` when using the alternate product port.
+The three Discovery commands require the configured provider and verify changing same-session imagery, artifact creation, and different-input Replay. The handoff script verifies typed operator controls, preview refresh, Sessions navigation, continuation, and six mobile routes without a model. Add `--base-url http://127.0.0.1:5003` when using the alternate product port.
+
+The server retains at most eight Discovery workspaces, including completed and failed attempts.
+When that limit is reached, further submissions are rejected before a model call. Finish any
+active handoff, stop the product, and run `uv run capability-runner serve` again to free the live
+workspaces. Stored capabilities and evidence survive the restart. Rebuilding the frontend alone
+does not reset server state.
 
 Stop the server with Ctrl+C. Review `var/` before deleting any local runs; it is ignored by Git and is not the curated submission record.
