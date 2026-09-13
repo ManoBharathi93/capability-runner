@@ -4,7 +4,6 @@ This is the shortest path through the assignment: **goal → real Discovery → 
 capability → model-free Replay → expected error → human takeover → evidence**.
 Allow 10–15 minutes for a first run, including provider waits. All members and
 balances below are synthetic. For more cases, use the [full manual checklist](manual-test-guide.md).
-For recording, use the [3–5 minute demo script](demo-walkthrough.md).
 
 ## 1. Start it
 
@@ -25,6 +24,13 @@ handoff demo need no model key. Never display `.env` in your recording.
 
 Use a local desktop for human takeover. A headless server cannot display the
 managed browser to you. Keep the product running; restarting loses active sessions.
+
+After updating and rebuilding, hard-refresh any already-open product tab
+(`Ctrl+Shift+R`) so it loads the current interface. In Interventions, the current
+labels are **Managed browser preview**, **Take control**, and **Return control to
+automation**. If you see **Return Control to Agent**, that tab is running the old
+interface. Refreshing the product tab preserves the server's active session;
+restarting the server does not.
 
 ## 2. Discover a savings lookup and inspect its artifact
 
@@ -70,6 +76,10 @@ Find the checking balance for customer 67890.
 Expect Checking and **$51.20 USD**. Then replay with **12345** and expect
 **15840** minor units (**$158.40**), **USD**, and **Replay model calls 0**.
 This interface has different forms and tables and produces its own bindings.
+
+The catalog currently gives generic discoveries the name **Discovered balance
+minor units / currency**. Inspect the artifact and its success conditions to
+identify Checking; the name alone does not identify the account type.
 
 ![Checking Replay on LegacyBank B](screenshots/checking-replay.png)
 

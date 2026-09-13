@@ -1,5 +1,41 @@
 # Progress
 
+## Reviewer UI diagnosis and private narration — 2026-09-13
+
+The owner reported the old intervention controls after the native handoff update.
+Read-only inspection found that the running server delivers the current hashed
+frontend bundle, while the screenshot contains superseded labels. The active
+intervention remains pause_requested, generation 1. A fresh Playwright client
+opened that same intervention and verified Managed browser preview, enabled Take
+control, disabled Return control to automation, and no old Return Control to Agent
+button. No mutating requests were issued. These are **VERIFIED BEHAVIOR**, recorded
+locally in `var/current-client-check.json` and `var/current-client.png`.
+This supports an already-open stale client as the cause; no server restart or
+session replacement was needed. Physical takeover acceptance is still pending.
+
+A subsequent read showed operator_controlled, generation 2, but the preview
+returned VIEW_UNAVAILABLE and evidence recorded HUMAN_CAPTURE_UNAVAILABLE.
+The original managed browser's usability has therefore not been established;
+loading the new controls is not a handoff acceptance pass. The owner received
+instructions to stop the unusable attempt and start a fresh handoff if its window
+is gone. No automated input was substituted for the owner's physical check.
+
+The live catalog also contains the verified checking package, displayed under its
+generic generated name. The screenshot guide now explains that naming limit and
+how to reload the updated interface. Account creation remains outside the owner's
+explicitly selected scope. The readiness report replaces unconditional READY with
+the current evidence and the outstanding physical handoff check.
+
+At the owner's request, personal recording narration is retained locally but removed
+from the tracked submission, with its exact path ignored and public links removed.
+This changes the current branch tree; it does not rewrite previously published commits.
+No runtime implementation changes are part of this documentation correction.
+Validation: 49 local links across README, REPORT and the three reviewer guides
+resolve; REPORT retains exactly seven required headings. The private narration
+still exists locally and is ignored. Changed documentation passes the local-path
+scan and Git whitespace check. The earlier regression suites were not rerun for
+these documentation-only edits.
+
 ## Direct native-browser handoff and screenshot guide — 2026-09-13
 
 The owner's attached instruction explicitly authorizes physical human control of the existing
@@ -40,9 +76,8 @@ was issued (HTTP 422 / DISCOVERY_NOT_STARTED). A separate subsequent checking su
 completed; the rejected attempt is not counted as a successful Discovery.
 
 The [README-linked screenshot guide](submission/test-product.md) maps assignment scenarios
-to inputs, expected outputs, actual images and harness-only edge cases. The shortened
-[demo narration](submission/demo-walkthrough.md) distinguishes direct human input from
-automated evidence. Historical operator-HTTP records below remain historical.
+to inputs, expected outputs, actual images and harness-only edge cases.
+Historical operator-HTTP records below remain historical.
 
 Physical acceptance: **MANUAL_ACCEPTANCE_REQUIRED**. Headed Playwright input is an automated
 stand-in. The local product was refreshed and the owner received the physical acceptance steps;

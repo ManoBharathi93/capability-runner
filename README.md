@@ -16,7 +16,7 @@ claim policy interception or gateway execution.
 
 **Start here: [Test the product step by step, with screenshots](docs/submission/test-product.md).**
 The guide covers savings Discovery, saved artifacts, different-input Replay, checking, expected
-errors, and direct browser handoff. For recording, use the [3–5 minute demo script](docs/submission/demo-walkthrough.md).
+errors, and direct browser handoff.
 
 ## Prerequisites
 
@@ -187,5 +187,5 @@ separate binding, then replay with another input. Replay has no model fallback.
 
 See the [browser contract](docs/submission/generic-browser-scope.md),
 [manual tests](docs/submission/manual-test-guide.md),
-[reviewer video walkthrough](docs/submission/demo-walkthrough.md), and [evaluation commands](evals/README.md).
+and [evaluation commands](evals/README.md).
 Generated packages and reports remain local; active run/session state is process-local.

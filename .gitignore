@@ -54,3 +54,6 @@ Thumbs.db
 Assignment.md
 docs/gemma-client.md
 docs/references/**/*.png
+
+# Personal recording notes, retained locally only
+docs/submission/demo-walkthrough.md
