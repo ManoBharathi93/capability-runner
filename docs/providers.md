@@ -1,45 +1,50 @@
-# Model Providers
+# Model provider setup
 
-## Accepted boundary
+**Only Discovery needs a model.** Replay and the handoff demo run without a key.
+Use [README setup](../README.md#provider-configuration) to configure one provider.
 
-Discovery uses a provider-neutral Model Client with OpenAI, Anthropic, and hosted Gemma adapters under `src/capability_runner/discovery/providers/`. Provider SDK types and wire formats remain inside the corresponding adapter. Replay must not import Model Client, provider adapters, or provider SDKs.
+## Configuration
 
-This provider set is **ACCEPTED BASELINE**. Feature compatibility and live availability are not **VERIFIED BEHAVIOR**.
+| Provider selection | Required values |
+| --- | --- |
+| `LLM_PROVIDER=openai` | `OPENAI_API_KEY`, `OPENAI_MODEL` |
+| `LLM_PROVIDER=anthropic` | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` |
+| `LLM_PROVIDER=gemma` | `GEMMA_BASE_URL`, `GEMMA_MODEL`; `GEMMA_API_KEY` when required |
 
-## P3.1 status
+Copy [.env.example](../.env.example) to a local `.env`.
+Process environment values take precedence. No automatic provider fallback occurs.
+Keep credentials and private endpoints out of Git, evidence and recordings.
 
-P3.1 implements a provider-neutral `ModelClient` contract and explicit OpenAI, Anthropic, and Gemma-compatible HTTP adapters. It uses one shared `httpx` transport dependency; no provider SDK is installed and normal tests use mock transports only. The local deployment note in `docs/gemma-client.md` contains a deployment-specific endpoint and is ignored pending publication review. Public documentation uses `GEMMA_BASE_URL` rather than embedding that host.
+## Why the adapters are separate
 
-## Configuration names
+Discovery uses a shared Model Client contract. Each adapter translates that
+contract into its provider's HTTP format. Provider-specific objects stay inside
+the adapter. Replay cannot import this layer.
 
-| Variable | Purpose | Persistence rule |
-| --- | --- | --- |
-| `LLM_PROVIDER` | Select the discovery adapter. | Nonsecret configuration. |
-| `OPENAI_API_KEY` | Authenticate an OpenAI deployment. | Local secret; never commit or log. |
-| `OPENAI_MODEL` | Select an OpenAI model/deployment. | Nonsecret unless deployment policy says otherwise. |
-| `ANTHROPIC_API_KEY` | Authenticate an Anthropic deployment. | Local secret; never commit or log. |
-| `ANTHROPIC_MODEL` | Select an Anthropic model. | Nonsecret unless deployment policy says otherwise. |
-| `GEMMA_BASE_URL` | Select a hosted Gemma-compatible endpoint. | Deployment configuration; do not publish private hostnames. |
-| `GEMMA_MODEL` | Select the hosted Gemma model/deployment. | Nonsecret unless deployment policy says otherwise. |
-| `GEMMA_API_KEY` | Authenticate when the deployment requires it. | Local secret; never commit or log. |
+The implementation uses `httpx`, not provider SDKs. Gemma expects an
+OpenAI-compatible `/chat/completions` endpoint. That protocol alone does not
+prove tool calling, image, audio or strict structured-output support.
 
-`LLM_PROVIDER` explicitly selects exactly one adapter: `openai`, `anthropic`, or `gemma`. There is no automatic fallback. Each invocation has a bounded default timeout of 30 seconds, configurable only through trusted `ModelProviderConfig` composition. Adapters normalize failures to `AUTHENTICATION_ERROR`, `RATE_LIMITED`, `TIMEOUT`, `CONNECTION_ERROR`, `INVALID_RESPONSE`, or `PROVIDER_ERROR` without retaining request bodies, credentials, or raw provider objects.
+## When a call fails
 
-Gemma uses only the documented OpenAI-compatible chat-completions shape at `${GEMMA_BASE_URL}/chat/completions`; P3.1 does not assume native structured-output enforcement, tool calling, image support, or any other provider-specific capability. `ModelClient` returns normalized text content which future Discovery code must parse and validate outside adapter SDK/wire formats. Replay remains isolated from this layer.
+| Reason | Check |
+| --- | --- |
+| `AUTHENTICATION_ERROR` | Credential and access to the configured model. |
+| `RATE_LIMITED` | Provider quota or rate limit. |
+| `TIMEOUT` | Provider response time; the default call timeout is 30 seconds. |
+| `CONNECTION_ERROR` | Reachability of the configured endpoint. |
+| `INVALID_RESPONSE` | Compatibility with the adapter's expected response format. |
+| `PROVIDER_ERROR` | Provider availability and configuration. |
 
-## Capability verification
+Errors are normalized without keeping raw provider payloads or credentials.
+Timeout changes belong in trusted backend configuration.
 
-Adapter implementation in P3.1 must distinguish contract tests from live deployment probes. For each configured provider/model, record separately:
+## What has been tested
 
-- text and image input support required by the chosen discovery mode;
-- tool calling or schema-constrained action output behavior;
-- request and response size limits relevant to observations;
-- timeout, rate-limit, refusal, malformed-output, and authentication mapping;
-- sanitization of provider errors and usage metadata;
-- exact model/deployment identifier and test date without credentials.
+Mock HTTP tests check request formatting and failure mapping. Recorded real-model
+runs establish only the provider/deployment used in those runs, not equal
+reliability across all three providers. See [progress](progress.md).
 
-A compatible chat-completion path or endpoint name alone does not establish image, tool, audio, or structured-output support. Hosted Gemma behavior is deployment-specific.
-
-## P3.1 implementation order
-
-Define the smallest normalized Model Client contract from Discovery Engine needs, then implement and contract-test each adapter independently. Provider-specific extensions require explicit capability declarations rather than leaking vendor objects into shared contracts. Live status remains separate for OpenAI, Anthropic, and hosted Gemma.
+The provider boundary is **ACCEPTED BASELINE**. Completed checks are
+**VERIFIED BEHAVIOR** only when evidence is recorded. New provider features need
+their own compatibility checks.

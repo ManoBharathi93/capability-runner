@@ -1,5 +1,13 @@
 # Visual Fidelity Report
 
+This compares an earlier UI build with its visual references. It is an appearance check, not proof of workflow correctness or physical human handoff.
+
+See [the screenshot guide](../submission/test-product.md) and
+[progress](../progress.md) for the reviewer path and current evidence.
+
+<details>
+<summary>Detailed visual record</summary>
+
 ## Scope and method
 
 The four files under `docs/references/ui/current/` are the complete P5.4b visual reference set.
@@ -60,3 +68,5 @@ Five routes again passed the 390 x 844 no-horizontal-overflow check. Full-page R
 show the sticky shell at the current scroll offset; this is a capture artifact, not a fabricated
 page state. New captures intentionally include only synthetic demo identifiers. Provider failures
 and passing run IDs are recorded in `docs/progress.md`.
+
+</details>

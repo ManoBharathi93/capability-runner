@@ -1,5 +1,18 @@
 # Subsystem: same-session direct browser handoff
 
+## Physical input in the retained browser
+
+Take control grants ownership of the same browser. Human clicks happen there, outside gateway policy. Return uses fresh validation. Automated checks passed; physical acceptance remains pending.
+
+For current behavior, use [the product guide](../submission/test-product.md) and
+[progress](../progress.md). The record below preserves the decision, tests and
+limits at this subsystem's implementation date. Earlier phase restrictions and
+operator-control descriptions are historical; the
+[native handoff record](direct-browser-handoff.md) explains the later physical-input exception.
+
+<details>
+<summary>Implementation record: contracts, trade-offs and checks</summary>
+
 ## Status
 
 - Design: **ACCEPTED BASELINE**, owner instruction of 2026-09-13.
@@ -57,3 +70,5 @@ bounded passive listeners. The frontend renders ownership and validated outputs,
 semantic-action proxy controls. Six direct-browser cases and the full 380-test Python suite
 passed; frontend and headed UI evidence are recorded in [progress](../progress.md).
 Physical human acceptance is not inferred from automated Page input.
+
+</details>

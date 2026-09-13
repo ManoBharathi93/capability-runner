@@ -1,5 +1,13 @@
 # Capability Runner — Design References
 
+These are design concepts, not screenshots proving the product works. Use them for appearance only. For implemented behavior, open the screenshot testing guide.
+
+See [the screenshot guide](../submission/test-product.md) and
+[progress](../progress.md) for the reviewer path and current evidence.
+
+<details>
+<summary>Detailed visual record</summary>
+
 These are 12 generated concept images from the design conversation, not screenshots
 of implemented software and not execution evidence. All displayed names, metrics,
 capability lists, statuses, logs, dates and security claims are illustrative.
@@ -78,3 +86,5 @@ before committing to a public repository.
 - `ui/archive/multi-screen-collage.png` (original: `a_clean_infographic_dashboard_collage_on_a_white_b.png`)
 - `ui/archive/teaching-setup-form.png` (original: `teach_a_capability_dashboard.png`)
 - `ui/archive/teaching-live-pre-teams.png` (original: `live_teaching_session_dashboard.png`)
+
+</details>

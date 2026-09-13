@@ -2,62 +2,149 @@
 
 ## Architecture
 
-I built Capability Runner as a modular monolith because the difficult boundary in this problem is control, not deployment. Discovery, deterministic execution, policy, browser ownership, human intervention, and evidence all need to agree on the state of one live session. Keeping them in one Python process makes those transitions explicit and testable without introducing service coordination that the assignment does not exercise. The CLI and the React product UI call the same backend behavior; the frontend displays backend-owned runs, capabilities, evidence, and live browser views rather than implementing another workflow engine.
+I kept the runner in one Python process. The hard part is deciding who may act
+on a live browser and when, so separate services would add coordination without
+helping this demo. The CLI and React UI use the same backend. The frontend shows
+state; it does not run workflows.
 
-Discovery uses an LLM because mapping a natural-language goal onto an unfamiliar interface is an open-ended reasoning problem. It observes a bounded view of the current page, asks a provider-neutral model for a strict data-only decision, validates that decision, and sends the action through the same enforcement path used everywhere else. The model cannot submit browser code, selectors, arbitrary URLs, or shell commands. Exploration is bounded by turns, actions, observation size, and time.
+Discovery uses an LLM to connect a natural-language goal to the current interface.
+The model proposes a small, typed action. The runner validates it and applies
+policy before execution. It cannot accept arbitrary browser code from the model.
+The loop has turn, action and time limits.
 
-Replay intentionally does not use an LLM. Once a procedure has been discovered and represented as reviewed data, further model decisions would make execution less reproducible, more expensive, and harder to audit. Replay interprets fixed steps and explicit conditions. The dependency boundary is enforced in code and tests, and a saved LegacyBank B package has been loaded and replayed in a new workspace with no provider configuration. The curated [through-line summary](evidence/through-line/summary.json) shows the same distinction in one real Gemma-backed flow: five Discovery calls and zero Builder or Replay calls.
+Replay intentionally has no model dependency. Once a procedure is saved, a model
+would add new decisions, cost and uncertainty to each run. Replay follows the
+artifact and checks current state. The [recorded through-line](evidence/through-line/summary.json)
+used five Discovery model calls and zero Builder or Replay calls. Separate tests
+load a generated package without provider configuration.
 
-All automated browser mutations pass through a gateway that checks session ownership and freshness before policy and dispatch. Browser details remain behind a surface adapter, while lifecycle coordination remains outside the adapter. During native handoff, the human instead acts directly in the retained browser; those physical actions are outside gateway enforcement. This keeps the authority boundary explicit. The trade-off is a single-process failure boundary: active sessions and interventions do not survive a restart, and the implementation is not a distributed execution service.
+All automated actions pass through Action Gateway. It checks ownership, freshness
+and policy before the browser adapter acts. During native handoff, the person
+uses the retained browser directly; physical input is outside gateway enforcement.
+One process keeps this boundary simple, but a restart loses active sessions.
 
 ## Artifact schema
 
-I chose a typed, versioned JSON capability rather than a transcript or generated automation code. The artifact declares its callable contract, ordered actions, typed inputs and outputs, success conditions, known business outcomes, and bounded retry behavior. Pydantic validation rejects unsupported versions, undeclared references, unsafe literals, and inconsistent definitions before immutable local storage. The curated [capability](evidence/through-line/capabilities/lookup_savings_balance/1.0.0.json) can be reviewed without reading the model conversation.
+I chose versioned JSON instead of a transcript or generated script. A reviewer
+can inspect its inputs, outputs, ordered steps, conditions and allowed recovery
+without reading a model conversation. Validation rejects unsupported versions
+and inconsistent references before storage. The [saved example](evidence/through-line/capabilities/lookup_savings_balance/1.0.0.json)
+contains a member input and balance/currency outputs, rather than one member's
+recorded values.
 
-The capability describes workflow intent with semantic targets; a separate application profile describes how those targets resolve on a specific UI. This separation is deliberate. A step such as “open the savings account” should remain stable when a tenant changes labels, frames, or markup, while the application binding may need to change. Embedding CSS or a session-specific path in the workflow would couple business meaning to one deployment and make review harder.
+A workflow names what a control means, such as opening Savings. A separate
+application profile says how to find that control in a particular interface.
+This separates business intent from labels, frames and page layout. A tenant's
+markup may change while the procedure stays the same.
 
-For a previously unseen web application, Discovery starts without hand-authored targets. The browser adapter issues short-lived element references from visible roles, names, labels, nearby text, frame identity, and structural fingerprints. A deterministic compiler converts only verified, uniquely resolved observations into durable bindings; the model never writes those bindings directly. The stored package keeps `capability.json`, `application-profile.json`, and integrity metadata separate. Runtime member identifiers, discovered balances, and ephemeral element references are excluded.
+For an app without a prepared profile, the browser supplies temporary element
+references. A deterministic compiler turns verified observations into durable
+bindings. The model does not write selectors. A package contains the capability,
+application profile and integrity metadata.
 
-This design has a cost: a capability and a compatible profile must be distributed and validated together. Generated target names are mechanically stable and selector-free, but they do not provide a complete banking ontology. A successful trace proves only the interactions and outcomes that were observed and represented. It does not establish that the capability works on another tenant or application variant.
+The cost is that the capability and profile must remain compatible. Generated
+names can also be hard to read. A successful trace supports what was observed;
+it cannot establish an unseen business outcome or prove another tenant works.
 
 ## Determinism & error handling
 
-Replay validates the capability and supplied inputs, verifies application identity, resolves each target unambiguously, executes the prescribed action, and evaluates fresh state against declared conditions. The state evaluator is model-free and uses three-valued results: true, false, or unknown. Success is returned only after identity checks, terminal conditions, and output extraction all pass. Results distinguish `SUCCESS`, a declared `BUSINESS_OUTCOME`, and `FAILURE` with a reason, failed step, attempt count, and safe diagnostic context.
+Replay checks inputs and application identity, resolves each target uniquely,
+performs the saved action, and checks fresh state. The State Evaluator returns
+true, false or unknown. Unknown never counts as success. The final result is
+`SUCCESS`, a declared `BUSINESS_OUTCOME`, or `FAILURE` with a reason and context.
 
-False success is more dangerous than conservative failure in a banking system. Returning another member’s balance as if it belonged to the requested member can drive an incorrect customer response or a later financial action while appearing healthy to every caller. A refusal can be investigated; a plausible wrong answer may not be noticed. The implementation therefore requires current visible evidence that the requested identity matches, selected account context agrees with the goal, and declared outputs can be parsed. Wrong-entity, ambiguous-target, and contradictory-state cases fail without publishing a result.
+False success is more dangerous than conservative failure in banking. A plausible
+balance from the wrong member may be repeated to a customer or used in a later
+decision. A clear failure can be investigated. I therefore require matching
+member identity, the requested account type and valid outputs before reporting
+success. Merely reaching a page with a balance is insufficient.
 
-Recoverable behavior is narrow and predicate-driven. A known slow observation can be retried within a declared bound. An action whose effect is uncertain is never retried automatically. The browser may have accepted the first click even if post-action evidence was lost; repeating it could submit a payment, create a second account, or duplicate another irreversible operation. That case returns an explicit failure instead of guessing whether execution occurred.
+Retries are narrow. A slow observation may be repeated within a declared limit.
+An action with an uncertain effect is never automatically retried: the first
+click may have worked even if its response was lost. Repeating a payment or
+account-creation action could duplicate the effect. Those examples explain the
+rule; this sandbox does not implement those banking operations.
 
-The curated [exception run](evidence/exception/summary.json) demonstrates `MEMBER_NOT_FOUND` as a business result, while the [failure evidence](evidence/failure/evidence.jsonl) records a bounded terminal failure with sanitized current-state information. The current scripted evaluation exercises 13 goal, outcome, and safety cases; the recorded run passed all 13 with nine expected fresh Replay results, zero false successes, zero wrong-entity successes, zero unsafe actions, and zero Replay model calls. These are synthetic-suite results, not a statistical reliability claim.
+The [not-found run](evidence/exception/summary.json) reports a business outcome,
+and the [failure log](evidence/failure/evidence.jsonl) includes bounded state
+evidence. The recorded 13-case evaluation covers expected successes and safe
+failures, with zero false successes or Replay model calls. That is evidence for
+these cases, not a reliability estimate for arbitrary websites.
 
 ## Heterogeneity & multi-tenant
 
-The implemented surface is a Playwright browser adapter, but capability execution depends on normalized observations and semantic actions rather than Playwright objects. A future desktop adapter could map the same observe, resolve, act, and evidence contract to OS accessibility or computer vision while preserving policy and session ownership. That is an architectural seam, not a claim that desktop automation exists.
+The browser adapter owns Playwright objects. Engines use normalized observations
+and semantic actions. A future desktop adapter could implement that contract with
+OS accessibility or vision. No desktop adapter has been built.
 
-Profile-less browser Discovery currently supports bounded, deterministic interaction with ordinary visible HTML controls: forms, inputs, buttons, links, tables or lists, labeled result fields, and a limited number of same-origin frames. Hidden controls, duplicate matches, stale references, unsupported primitives, cross-origin internals, and application identity mismatch fail closed. CoreBank and the structurally different LegacyBank B have both completed real-provider Discovery and fresh model-free Replay through the product UI. The exact supported contract is documented in [generic-browser-scope.md](docs/submission/generic-browser-scope.md).
+CoreBank and LegacyBank B have both completed real-provider Discovery and fresh
+Replay. Supported controls include ordinary visible HTML inputs, links, buttons
+and result tables, with bounded same-origin frame support. Ambiguous, stale or
+unsupported targets fail. The [browser scope](docs/submission/generic-browser-scope.md)
+lists the limits.
 
-For multi-tenant reuse, the design places business procedure in the capability and tenant or version-specific resolution in the application profile. The intended evolution is one reviewed vendor capability with separate profiles, narrow overrides, identity checks, preflight resolution, and quarantine when drift creates missing or ambiguous targets. I have not demonstrated one byte-identical capability replayed through two tenant bindings. LegacyBank B proves profile-less discovery against a second UI and produces its own package; it is not cross-tenant reuse evidence. Proving shared-definition reuse and safe drift handling is future work.
+Tenant reuse is a design goal: keep one workflow and supply narrow, reviewed
+profiles for each app variant. Identity checks and unique target resolution must
+still pass. The second banking app currently produces its own package. I have
+not demonstrated one unchanged capability across two tenant profiles, so I do
+not present this as cross-tenant reuse.
 
 ## Escalation & handoff
 
-Risky actions are blocked before dispatch and can produce an intervention only when the system can prove the action was not executed. The intervention carries sanitized capability, step, target, state, and reason context while keeping runtime values in memory. Take control waits for admitted automation to quiesce, then grants the human ownership of the same headed Chromium Page and BrowserContext. The reviewer clicks in that existing window; the product image is only a preview. Direct human input is outside gateway policy. The old operator gateway remains a CLI/test seam, not the product handoff.
+The implemented resumable path starts when Replay reaches an approval-required
+action that is known not to have executed. The intervention includes the blocked
+step, reason, session identity and safe context. Take control waits for admitted
+automation to finish, then grants ownership of the same Chromium Page and
+BrowserContext. The person clicks in that window; the product image is a preview.
 
-On handback, automation does not resume from its old assumption. The operator has changed the page, and delayed automation may refer to an earlier generation. The system first re-observes the same session, checks whether the blocked step is now complete, and only then advances the control generation and resumes exactly once. This prevents stale work from racing the operator or repeating an action the operator already performed.
+Returning control triggers a fresh observation before automation resumes. The
+person may have completed the blocked action, opened the wrong account, or closed
+the page. Continuing from the old snapshot could repeat an action or return the
+wrong result. The controller issues a new generation only after validation;
+old requests cannot act with stale ownership.
 
-The [direct-browser evidence](evidence/direct-browser/summary.json) records stable session/context/page identities, generation 0 to 3, three initial automated actions, no gateway-operated human action, successful continuation and zero Replay calls. Tests also reject unchanged, wrong-account and closed-browser states. Passive human events record action kinds and opaque identities without values or keystrokes; missing capture does not prevent valid resume. Headed Playwright input verified this path, but it is an automated stand-in. Physical human acceptance remains a manual gate. State is process-local, and OS focus is best effort.
+[Automated handoff evidence](evidence/direct-browser/summary.json) records stable
+browser identities, generation 0 to 3, no repeated earlier actions and zero
+Replay model calls. Negative tests reject unchanged, wrong-account and closed
+states. Headed Playwright input is an automated stand-in; physical human
+acceptance remains outstanding. The owner's reported unavailable preview is
+not a successful acceptance run.
+
+Passive capture records bounded event kinds and opaque identities without field
+values or keystrokes. It can miss events, so fresh state, rather than event count,
+decides whether continuation is valid. OS focus is best effort.
 
 ## Safety
 
-Authority comes from trusted configuration, never from the goal, page text, or model output. Policy constrains application identity, origin and route scope, action type, and semantic target. Unknown actions deny by default; configured risky actions require approval; ambiguous or stale browser references cannot fall back to a first match. Prompt-injection-like page text is treated as untrusted content. The product’s profile-less mode is limited to configured read-only application scopes, with an explicit narrow exception for the synthetic CoreBank search route.
+Authority comes from trusted configuration, not the goal, page text or model.
+Allowlisted applications, routes and action types constrain automation. Unknown
+actions are denied; configured risky actions require approval. The read-only
+sandbox has a narrow allowance for its known search POST route.
 
-Capabilities store parameter references instead of invocation values. Evidence is minimized before persistence: secret wrappers, configured sensitive keys, and known runtime values are redacted while correlation IDs, action classifications, fingerprints, and reason codes remain. Curated evidence contains no provider credential, private endpoint, raw model payload, runtime input map, or browser selector. Live preview frames are transient and cache-disabled. The screenshot guide deliberately publishes only reviewed synthetic demo screens.
+Artifacts use parameter references. Evidence redacts configured sensitive keys,
+secret wrappers and known runtime values before writing. Published screenshots
+use reviewed synthetic data. Preview frames are transient.
 
-The system has tested action authorization, including policy denial, required approval, operator ownership, and stale-generation rejection. It does not authenticate users at the local HTTP boundary and should not be exposed publicly as a production operator console. Redaction is key- and exact-value-based rather than universal PII detection, local JSON files are not encrypted, and screenshots do not have general semantic PII redaction. These limits are acceptable for a synthetic local demonstration, not for regulated production data.
+These controls have limits. Physical human input bypasses gateway policy, and the
+person must stop interacting after handback. The local HTTP UI has no production
+authentication. Files are not encrypted, and redaction is not a general detector
+of financial PII in text or screenshots. Action-authorization tests do not prove
+user authentication or production data protection.
 
 ## Cuts
 
-The implemented submission includes a React product UI, a capability catalog, live same-session Discovery views, generated package inspection, different-input Replay, business-outcome presentation, an intervention console, and scripted/live evaluation commands. Completed regression counts and evidence are recorded in [progress.md](docs/progress.md), including independent savings/checking oracles, provider-free stored Replay, wrong-account rejection, and direct-browser handoff checks. Real provider failures and successful attempts are recorded separately rather than converted into a reliability percentage.
+The React UI, catalog, live Discovery preview, package inspection, Replay and
+evaluation commands are implemented. I left out account creation, desktop
+automation, distributed scheduling, durable browser recovery, production login,
+automatic profile repair, voice, screen sharing and Teach. They would add scope
+without strengthening the demonstrated execution contract.
 
-I deliberately did not build a desktop adapter, distributed scheduler, durable browser-session recovery, production authentication or operator identity, encrypted storage, automated profile repair, or unrestricted web access. Voice, screen-share, and Teach behavior are not implemented; only the existing disabled UI shell remains. The source is published in the public [Capability Runner repository](https://github.com/ManoBharathi93/capability-runner); anonymous repository and raw README access were verified after publication.
+The public repository contains code, setup instructions and curated evidence.
+The [progress record](docs/progress.md) links completed verification separately
+from design intent. Evaluation currently supplies regression results, not a
+persisted draft-to-approved capability gate.
 
-The evaluation harness is useful regression evidence, but it is not yet a formal capability-qualification product. There is no persisted draft-to-approved state, independent qualification report, or unattended-execution gate. Cross-tenant reuse of one identical capability has also not been demonstrated. If I continued, I would first extend the existing independent fixture oracles into repeated model-free qualification trials, then prove one unchanged capability against two tenant profiles with a deliberate drift failure. Those additions would strengthen trust in the existing execution model without broadening it into a general workflow platform.
+My next step is to complete physical handoff acceptance. After that, I would
+repeat model-free Replay against independent expected results, then test one
+unchanged capability across two tenant profiles with deliberate drift. These
+would strengthen the evidence for correctness and reuse before adding workflows.

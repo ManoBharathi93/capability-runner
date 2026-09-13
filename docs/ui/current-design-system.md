@@ -1,5 +1,13 @@
 # Current UI Design System
 
+This is a visual reference for colors, spacing and components. Runtime status and safety claims must come from the backend, not from mockups.
+
+See [the screenshot guide](../submission/test-product.md) and
+[progress](../progress.md) for the reviewer path and current evidence.
+
+<details>
+<summary>Detailed visual record</summary>
+
 ## Source and confidence
 
 This specification is extracted from all four images in `docs/references/ui/current/`, each at
@@ -190,3 +198,5 @@ continuous animation; only running-state indicators may pulse subtly.
 - Replace illustrative reference metrics with actual computed values or `Unavailable`/empty states.
 - Disabled Teach media controls must explicitly state that voice/screen sharing is not connected in
   P5.4b and must not simulate activity.
+
+</details>

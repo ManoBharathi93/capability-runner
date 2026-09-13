@@ -1,5 +1,50 @@
 # Progress
 
+## Current evidence summary
+
+This is a dated record of completed work. It is not a claim that every run succeeds.
+
+| Check | Latest recorded result |
+| --- | --- |
+| Ordinary Python regression | 380 passed; eight opt-in live cases excluded. |
+| Frontend | 11 tests passed; typecheck and production build passed. |
+| Static checks | Ruff, Pyright and lock consistency passed. |
+| Banking evaluation | 13 cases passed, including expected safe failures; zero Replay model calls. |
+| Real-provider product runs | Savings and Checking completed, then replayed with different inputs. |
+| Native browser handoff | Automated same-Page/context tests passed. Physical acceptance remains pending. |
+
+Evidence: [through-line](../evidence/through-line/summary.json),
+[Checking](../evidence/checking/ui-summary.json),
+[direct-browser handoff](../evidence/direct-browser/summary.json).
+The recorded unavailable preview in the owner's session remains unresolved.
+
+## Documentation readability pass — 2026-09-13
+
+The owner requested shorter public writing and an uncommitted deep learning
+guide. Public entry pages now use plain explanations, smaller tables and links
+to evidence. Historical records stay available below instead of being required
+reading. Stale frontend, handoff and test-count claims in current guides were
+corrected. No runtime code or evidence JSON was changed by this pass.
+
+Completed documentation checks are **VERIFIED BEHAVIOR**: 224 local links and
+section anchors across public Markdown and the private guide resolve; no public
+page links to the private guide. REPORT has exactly the seven required headings
+and 1,185 words. The private guide is ignored and untracked. Added public text
+contains no configured secret/private endpoint or local user path. Git scope
+and whitespace checks passed. Local results are in
+`var/readable-docs-validation.json`. The earlier runtime suites were not rerun
+for prose changes.
+
+## Reading the history
+
+**ACCEPTED BASELINE** is a decision. **PROPOSED IMPLEMENTATION DETAIL** is an
+unresolved choice. **VERIFIED BEHAVIOR** requires completed evidence.
+Older phase labels, test counts and operator-control descriptions are dated
+records; later entries explain changes.
+
+<details>
+<summary>Dated engineering history and exact verification commands</summary>
+
 ## Reviewer UI diagnosis and private narration — 2026-09-13
 
 The owner reported the old intervention controls after the native handoff update.
@@ -942,3 +987,5 @@ both returned 200. The intended-public staged set was checked before the first p
 the assignment source, private provider notes, browser images, run data, caches, dependencies,
 generated builds, and temporary reports were ignored; 229 staged text files had no matching
 credential signature or workstation user path.
+
+</details>

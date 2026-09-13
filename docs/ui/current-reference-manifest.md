@@ -1,5 +1,13 @@
 # Current UI Reference Manifest
 
+This records the visual inputs used during frontend design. Image names and counts are historical; they do not establish current product behavior.
+
+See [the screenshot guide](../submission/test-product.md) and
+[progress](../progress.md) for the reviewer path and current evidence.
+
+<details>
+<summary>Detailed visual record</summary>
+
 ## Audit scope
 
 The complete visual source is `docs/references/ui/current/`. It contains four PNG files, all
@@ -142,3 +150,5 @@ in the images must not be reproduced as runtime facts unless the backend supplie
   Teach controls that imply voice or screen sharing remain disabled and explicitly unconnected.
 - The CoreBank/browser content shown inside references is illustrative. Runtime SurfaceView owns
   actual intervention imagery; a persisted run timeline never fabricates a live browser session.
+
+</details>

@@ -1,5 +1,38 @@
 # Architecture Decision Register
 
+A decision record explains a choice, the alternative we rejected and when we
+would revisit it. The accepted decisions remain in the expandable record.
+
+## Decisions at a glance
+
+| Decision | Reason | Main cost |
+| --- | --- | --- |
+| One backend process | Keep session/control transitions easy to reason about. | No crash recovery for active browsers. |
+| Separate Discovery and Replay | Use model reasoning only when finding the procedure. | Replay cannot improvise around new UI states. |
+| Shared Action Gateway | Central policy and ownership checks for automation. | Careful ordering and concurrency tests are needed. |
+| Typed JSON interpreter | Review data rather than execute generated code. | The supported action language is bounded. |
+| Playwright adapter | Real browser behavior behind one surface contract. | Desktop remains a separate implementation. |
+| Explicit ownership state | Prevent stale automation from racing a human. | Handback needs fresh validation. |
+| Provider-neutral client | Keep provider formats out of the execution core. | Each provider needs its own compatibility tests. |
+| Local JSON and safe event logs | Easy to run and inspect. | No distributed storage or universal PII detection. |
+| Core before teaching | Finish the required thread before optional breadth. | Voice and Teach remain absent. |
+| One responsibility-based package | Keep dependencies visible without extra services. | Boundaries need tests and review. |
+
+## How to read the original record
+
+**ACCEPTED BASELINE** means approved direction. **PROPOSED IMPLEMENTATION DETAIL**
+means unresolved at the time of writing. **VERIFIED BEHAVIOR** requires a completed
+check in [progress](../progress.md).
+
+The later [native handoff decision](../subsystems/direct-browser-handoff.md)
+amends the original rule for physical human input only. It happens directly in
+the retained browser; every automated action still uses the gateway.
+Historical phase gates and pending details below must be read with later
+authorization and evidence, not as current implementation status.
+
+<details>
+<summary>Full accepted decisions, alternatives, assumptions and revisit conditions</summary>
+
 This register is the source of truth for architecture status. It records decisions already accepted by the owner without implying that they are implemented or verified.
 
 ## Status vocabulary
@@ -179,3 +212,5 @@ These questions are unresolved. Recommendations are starting points for owner re
 ## Change rule
 
 Accepted decisions are implemented within their authorized milestone. Alternatives remain context, not invitations to redesign. A failing experiment or concrete contradiction must be recorded here with its evidence, the smallest necessary change, and consequences; work affected by that change pauses for owner review. New public contracts, security/data-handling policy, significant dependencies, or scope changes require owner approval.
+
+</details>

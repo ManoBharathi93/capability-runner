@@ -1,37 +1,48 @@
-# Discovery and Replay evaluation
+# Evaluate Discovery and Replay
 
-`banking.yaml` and `banking-live.yaml` use JSON syntax, which is valid YAML. The strict Pydantic
-loader intentionally accepts this subset without adding a YAML dependency. Each case declares
-application, goal, setup, expected classification/outputs/business outcome, allowed/forbidden
-actions, bounds and whether a profile exists before Discovery.
+Use these commands without a model key:
 
-The two real applications support customer/member lookup, account category/state, savings and
-checking balances. CoreBank additionally has a trusted MEMBER_NOT_FOUND business-outcome contract.
-The suite exercises five savings paraphrases, unprofiled savings, checking, unsupported goals,
-injection, wrong entity, expiry and the known business outcome. Scripted models live in the
-explicit evaluation fixture module; production Discovery contains no application branches.
-
-```sh
+```powershell
 uv run capability-runner eval discovery --suite evals/banking.yaml
 uv run capability-runner eval replay --suite evals/banking.yaml
+```
+
+Both prepare a capability through Discovery and run it in a fresh Replay browser.
+The phase marks the evaluation focus. Preparation calls and Replay calls are
+counted separately; Replay must add zero.
+
+## What the 13 cases check
+
+The suite covers savings paraphrases, new-app savings, Checking, an unsupported
+destructive goal, page injection, wrong member, expiry and MEMBER_NOT_FOUND.
+
+Each case declares the expected result, output, allowed/forbidden actions and
+execution bounds. Ordinary evaluation uses scripted model fixtures and local
+banking apps. It tests integration; it does not prove real-model reliability.
+
+A safe failure can pass a negative case. **Thirteen passing cases do not mean
+thirteen successfully discovered capabilities.**
+
+## Use a real provider
+
+With [provider configuration](../docs/providers.md), opt in explicitly:
+
+```powershell
 uv run capability-runner eval discovery --suite evals/banking-live.yaml --live
 ```
 
-Both commands prepare a capability through Discovery and then load it for a fresh browser Replay.
-The `phase` field identifies the requested evaluation focus. Model calls used in preparation are
-reported separately; Replay must add zero. Normal runs use scripted fixtures and loopback HTTP,
-with no external network/model call. Only `--live` with the live suite uses a configured provider.
-No pre-existing profile is constructed for LegacyBank B.
+Failures stay in the report. Successful cases must save a valid package and
+produce a matching model-free Replay.
 
-The browser/session safety cases also run in ordinary pytest: duplicate and hidden controls plus
-stale ephemeral refs in `tests/integration/surfaces/test_generic_browser.py`; injection, policy
-denial, wrong identity and application mismatch in `tests/integration/capabilities/test_generic_package.py`;
-stale generation and unknown side-effect/no-retry behavior in the existing interaction and Replay
-tests. These focused protocol tests complement the 13 workflow cases; they are not additional
-successful discoveries in the evaluation report.
+## Read the report
 
-Reports are written incrementally to `var/evals/<run-id>/report.json` and preserve failed attempts.
-Metrics derive from actual results, validated artifacts and gateway evidence. A matching expected
-safe failure is a passed test case; it is not a successfully discovered capability. Provider
-availability and nondeterministic model failures remain visible. Reports are local runtime data
-and are not automatically copied into submission evidence.
+Results are written incrementally to `var/evals/<run-id>/report.json`.
+Inspect classification, expected versus actual output, action counts and Replay
+model calls. Local reports are not automatically published as curated evidence.
+
+The suite files use JSON syntax, a valid YAML subset. The strict loader accepts
+that subset without another parsing dependency.
+
+For stale controls, ownership and uncertain-effect tests, use the
+[manual checklist's harness commands](../docs/submission/manual-test-guide.md#cli-and-evaluation).
+Recorded results are in [progress](../docs/progress.md).

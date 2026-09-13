@@ -1,156 +1,85 @@
-# System Design
+# How the runner works
 
-## Reviewer narrative
+Read [REPORT](../../REPORT.md) for the reasons behind these choices.
+This page follows one request through the code.
 
-Capability Runner has one required story:
-
-1. **Discover** a workflow with a real model operating a real UI.
-2. **Compile** the verified trace into a typed, reviewable capability.
-3. **Replay** the capability in a fresh session without model decisions.
-4. **Intervene** when policy or state prevents safe automation.
-5. **Resume safely** on the same session after fresh validation and ownership transfer.
-
-The implementation is a Python modular monolith. Its important property is not the number of
-modules; it is that discovery, replay, and human actions share the same safety and session-control
-boundaries.
+## One workflow, two execution modes
 
 ```mermaid
 flowchart LR
-    Goal[Goal + target] --> Discovery[Discovery Engine]
-    Discovery --> Model[Provider-neutral Model Client]
-    Model --> Discovery
+    Goal[Goal and app] --> Discovery[Discovery]
+    Discovery <--> Model[Model Client]
     Discovery --> Gateway[Action Gateway]
-
-    Discovery --> Builder[Capability Builder]
-    Builder --> Validator[Capability Validator]
-    Validator --> Definition[CapabilityDefinition JSON]
-    Definition --> Store[Capability Store]
-    Store --> Replay[Replay Engine]
+    Discovery --> Builder[Build and validate]
+    Builder --> Artifact[Saved capability and profile]
+    Artifact --> Replay[Replay: no model]
     Replay --> Gateway
-
-    Gateway --> Policy[Policy Guard]
-    Gateway --> Sessions[Session Controller]
-    Gateway --> Surface[Surface Adapter]
-    Surface --> Browser[Playwright Browser Adapter]
-
-    Replay -->|blocked| Intervention[Intervention Manager]
-    Intervention --> Operator[Local Operator Page]
-    Operator -->|take control| Sessions
-    Operator -->|physical input in same window| Browser
-    Browser -->|passive human observations| Evidence
-    Debug[CLI controlled test seam] --> OperatorGateway[Operator Action Gateway]
-    OperatorGateway --> Policy
-    OperatorGateway --> Sessions
-    OperatorGateway --> Surface
-    Operator -->|hand back| Resume[Fresh validation]
-    Resume --> Replay
-
-    Gateway --> Evidence[Sanitized JSONL Evidence]
-    OperatorGateway --> Evidence
-    Intervention --> Evidence
+    Gateway --> Browser[Browser adapter]
+    Gateway --> Evidence[Safe event log]
 ```
 
-## Control and data flow
+**Discovery finds a procedure. Replay executes a saved procedure.**
+Both use the same checks before automated actions reach the browser.
 
-### Discover
-
-`DiscoveryEngine` receives a typed request, normalized surface snapshots, trusted semantic targets,
-and a provider-neutral `ModelClient`. Model output is untrusted: JSON is parsed into strict
-Pydantic decisions, unknown targets are rejected, fill values must originate in the goal, and
-completion claims must match current trusted observations. The loop is bounded by turns, actions,
-timeouts, invalid responses, and no-progress detection.
-
-The model proposes; it never dispatches. Each action passes through `ActionGateway`, which resolves
-a trusted profile binding, asks `PolicyGuard`, obtains a serialized automation dispatch lease from
-`SessionController`, calls the injected `SurfaceAdapter`, and records policy/action evidence.
-
-### Compile
-
-`CapabilityBuilder` consumes only a verified discovery trace plus trusted authoring metadata. It
-produces the same immutable `CapabilityDefinition` that Replay later interprets. The definition
-contains schema and capability versions, application compatibility, typed inputs and outputs,
-ordered action steps, semantic targets, bounded retries, success conditions, and declared business
-outcomes. It contains parameter references rather than invocation values and no provider identity,
-raw transcript, selector, browser handle, or executable code.
-
-`CapabilityValidator` rejects unsupported or inconsistent definitions before `CapabilityStore`
-publishes versioned JSON. The store is local and single-process; distributed publication is not
-claimed.
-
-### Replay
-
-`ReplayEngine` binds validated inputs and interprets the saved steps without importing or invoking
-the model layer. `StateEvaluator` classifies normalized snapshots and extracts declared outputs.
-All mutations again pass through `ActionGateway`, so discovery and replay cannot diverge on policy,
-target trust, session ownership, or evidence behavior.
-
-Replay returns one of three terminal meanings:
-
-- `SUCCESS`: terminal conditions are true and outputs were extracted.
-- `BUSINESS_OUTCOME`: a declared domain result such as `MEMBER_NOT_FOUND` was observed.
-- `FAILURE`: policy, target, state, timeout, input, session, or infrastructure prevented completion.
-
-Recoverable observation waits are bounded internal paths, not a fourth terminal result. An action
-whose effect is uncertain is never retried automatically.
-
-### Intervene and resume
-
-For approval-blocked Replay, the result carries an immutable checkpoint only when the action is
-known not to have executed. The continuation coordinator retains protected invocation state in
-memory and asks `InterventionManager` to transfer the existing session. The product shows a preview and transfers control of the existing headed browser.
-
-The CLI controlled-action seam retains OperatorActionGateway. In the product, physical human
-input goes directly to the same browser and is outside gateway policy; bounded passive events
-record action kinds without field values or keystrokes. On handback, fresh semantic state is collected while
-automation remains blocked. Session Controller issues a new generation only after validation.
-Replay then checks terminal success first, otherwise proves whether the blocked step is complete;
-it never trusts a pre-intervention snapshot or repeats earlier steps. A consumed continuation can
-run only once.
-
-## Core contracts
-
-| Contract | Role | Safety property |
+| Part | Its job | Boundary |
 | --- | --- | --- |
-| `ApplicationProfile` | Trusted entry point and semantic-to-surface bindings | Runtime/model input cannot authorize a target or route. |
-| `CapabilityDefinition` | Agent-invocable replay contract | Strict, immutable, versioned, declarative, and free of invocation values. |
-| `ReplayResult` | Caller-visible terminal result | Separates success, business outcome, and failure; identifies the failing step. |
-| `ReplayCheckpoint` | Approval-only resume cursor | Exists only for `APPROVAL_REQUIRED` with `NOT_EXECUTED` effect state. |
-| `SessionState` | Ownership and generation authority | Wrong-owner and stale-generation actions fail before dispatch. |
-| `EvidenceEvent` | Structured durable event | Correlation survives; configured sensitive values are redacted before write. |
+| Discovery | Read the current page and ask the model for the next allowed action. | The model proposes; it cannot execute code. |
+| Capability Builder / Validator | Turn a verified trace into a typed, valid artifact. | A completion claim alone cannot create a valid capability. |
+| Replay / State Evaluator | Follow saved steps, check current state and return typed outputs. | No model calls or invented recovery steps. |
+| Action Gateway | Check ownership, freshness and policy before dispatch. | Every automated action uses this path. |
+| Browser Surface Adapter | Hold the live browser and resolve controls. | Playwright handles stay here. |
+| Session Controller | Decide who owns the session and reject stale requests. | A UI button cannot grant itself authority. |
+| Evidence Recorder | Write correlated, sanitized events. | It does not decide whether a goal succeeded. |
 
-## Surface and tenant seams
+See the [repository map](../repository-map.md) for source locations.
 
-The artifact names semantic targets and conditions; it does not embed Playwright selectors. A
-profile binds those targets to ordered adapter-specific candidates. Replay and State Evaluator are
-Playwright-free, so a legacy-browser or desktop adapter can implement the same opaque-session,
-observe, inspect, act, and failure-evidence port without changing capability semantics.
+## What is saved
 
-For tenant reuse, a base capability identifies the vendor application family and compatible
-variant. Tenant/version profiles should provide entry points, branding aliases, locator overrides,
-and policy differences. Resolution should preflight compatibility, apply only narrow approved
-overrides, fail closed on ambiguity, record per-variant outcomes, and quarantine repeated drift
-rather than silently rewriting the base artifact. This is design only; no multi-tenant runtime
-behavior is claimed.
+The capability defines inputs, outputs, steps and conditions. The application
+profile maps meaningful targets, such as “open Savings,” to concrete controls.
+New-app Discovery also saves package integrity metadata.
 
-## Evidence and privacy boundary
+Keeping these separate lets a workflow survive some app-specific changes, but
+compatible bindings still need validation. The second banking app has its own
+package; one-artifact cross-tenant reuse remains unproved.
 
-The implemented recorder appends sanitized JSONL events. Gateway events preserve run, session,
-step, and action correlation while redacting secret wrappers, sensitive keys, and explicit runtime
-values. Capability JSON stores types and references, not member IDs or balances from an invocation.
+## How results are decided
 
-Current evidence limits matter:
+| Result | Meaning | Example |
+| --- | --- | --- |
+| `SUCCESS` | Identity and success conditions match; outputs parse. | Requested member's savings balance. |
+| `BUSINESS_OUTCOME` | A declared business condition is observed. | `MEMBER_NOT_FOUND`. |
+| `FAILURE` | Safe completion cannot be established. | Wrong account, ambiguous control, closed browser. |
 
-- Discovery model decisions/rationale and Replay lifecycle/outcome events are not directly emitted.
-- Terminal Discovery/Replay failures in the reviewer runtime invoke and persist a bounded,
-  sanitized textual surface snapshot; screenshots and DOM archives are not persisted.
-- Operator screenshots are bounded and ephemeral; they are not submission failure artifacts.
-- Redaction is exact-value and key based, not semantic PII discovery.
-- Evidence and continuation state are local, single-process, and not crash-recoverable.
+A slow observation can be retried within a bound. An action whose effect is
+uncertain is not automatically repeated.
 
-## Deliberate cuts
+## Human takeover
 
-No queues, clusters, distributed locks, production authentication, crash recovery, second surface
-adapter, tenant runtime, general LLM fallback, generated code, or React product frontend are needed
-to demonstrate the assignment core. The local operator page satisfies the assignment's explicit
-minimal-handoff allowance. Submission work should expose and document the implemented vertical
-slice before adding optional breadth.
+```mermaid
+flowchart LR
+    Paused[Approval blocks an unexecuted action] --> Take[Take control]
+    Take --> Human[Human uses the same browser]
+    Human --> Return[Return control]
+    Return --> Check[Observe fresh state]
+    Check -->|Valid| Resume[Resume once with a new generation]
+    Check -->|Invalid or closed| Fail[Report failure]
+```
+
+The product preview is not interactive. Physical input occurs in the managed
+browser, outside gateway enforcement. Bounded passive events record action kinds,
+not field values or keystrokes. Missing events do not establish failure or success;
+fresh state does.
+
+The CLI intervention command retains a controlled HTTP action path for tests.
+It must not be described as physical human acceptance.
+
+## Current limits
+
+The React UI, model-driven Discovery, saved Replay and automated handoff checks
+exist. Actual human acceptance remains pending. Sessions are process-local;
+there is no production login, desktop adapter, general PII redaction, voice or Teach.
+
+Discovery and Replay lifecycle events are recorded. Raw model conversations are
+not. Failure evidence includes bounded safe text; published screenshots contain
+synthetic data. See [evidence](../../evidence/README.md).

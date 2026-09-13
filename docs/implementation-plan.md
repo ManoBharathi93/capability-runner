@@ -1,5 +1,33 @@
 # Implementation Plan
 
+This is the build history, not a setup guide. Use [README](../README.md) to run
+the product and [readiness](submission/readiness-report.md) for remaining gaps.
+
+## What the plan achieved
+
+The sequence was: contracts and guardrails; browser execution; artifact and
+Replay; real-model Discovery; human intervention; product UI and evidence.
+Working behavior is recorded in [progress](progress.md), not inferred from a
+checked-off plan.
+
+## Next work
+
+1. Complete physical handoff acceptance against a usable managed browser.
+2. Strengthen repeat-Replay evidence using independent expected results.
+3. Demonstrate one unchanged capability across two tenant profiles, with a
+   deliberate drift failure.
+
+Items 2–3 are suggested next work, not new implemented features or authorization
+to expand the current documentation task. Do not add account creation merely to
+increase demo breadth.
+
+The detailed stages below preserve the original order, gates and intermediate
+cuts. Later owner instructions supersede earlier restrictions for work already
+authorized. Voice and Teach remain unimplemented.
+
+<details>
+<summary>Original staged plan and acceptance gates</summary>
+
 ## Operating rules
 
 Each milestone is separately authorized. Complete its focused tests, relevant regression checks, integration point, and `docs/progress.md` update, then stop. Parent milestones are not marked passed because one subdivision passed. Accepted architecture is not reopened during implementation; material public-contract, security, data, dependency, or scope changes require owner approval.
@@ -168,3 +196,5 @@ Status: implemented and scoped verification passed. Both real-provider browser U
 different-input zero-model Replay, normal evaluations and final gates are recorded in
 `docs/progress.md`. Stop here; additional authoring modes or broader application scope require
 separate authorization.
+
+</details>

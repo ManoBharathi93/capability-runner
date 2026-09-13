@@ -1,5 +1,18 @@
 # Generic Discovery, live workspace, and evaluation
 
+## Learning without a prepared profile
+
+The browser supplies temporary references; a deterministic compiler builds durable bindings from verified observations. Supported controls and read-only scope remain bounded.
+
+For current behavior, use [the product guide](../submission/test-product.md) and
+[progress](../progress.md). The record below preserves the decision, tests and
+limits at this subsystem's implementation date. Earlier phase restrictions and
+operator-control descriptions are historical; the
+[native handoff record](direct-browser-handoff.md) explains the later physical-input exception.
+
+<details>
+<summary>Implementation record: contracts, trade-offs and checks</summary>
+
 Design: **ACCEPTED BASELINE**. Implementation: implemented. Verification: passed.
 Completed behavior and its evidence are recorded in [progress](../progress.md) as
 **VERIFIED BEHAVIOR**, including both real-provider UI acceptances and fresh zero-model Replay.
@@ -84,3 +97,5 @@ unobserved business outcomes. Unsupported UI primitives, drift and ambiguity sto
 Provider timeout/errors remain possible and are recorded as non-success. One Discovery runs at a
 time, with at most eight retained process-local sessions until server shutdown. Preview images do
 not provide universal PII redaction. Teach and external publication have not started.
+
+</details>

@@ -1,5 +1,18 @@
 # Product navigation repair
 
+## Making the product paths usable
+
+Interventions and Sessions expose the existing handoff. Savings and Checking are the chosen demo outcomes; no account-creation feature was added.
+
+For current behavior, use [the product guide](../submission/test-product.md) and
+[progress](../progress.md). The record below preserves the decision, tests and
+limits at this subsystem's implementation date. Earlier phase restrictions and
+operator-control descriptions are historical; the
+[native handoff record](direct-browser-handoff.md) explains the later physical-input exception.
+
+<details>
+<summary>Implementation record: contracts, trade-offs and checks</summary>
+
 ## Scope and decision
 
 The owner's 2026-09-13 request authorizes fixing inaccessible Interventions and Sessions
@@ -29,3 +42,5 @@ Extend the generated-package integration tests with fixed independent savings/ch
 stored Replay in a new workspace without provider configuration, and wrong-account-category
 completion rejection in both directions. Extend the live UI checker to select checking explicitly.
 No account creation or new banking business functionality is authorized by this repair.
+
+</details>

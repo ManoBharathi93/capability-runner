@@ -1,5 +1,39 @@
 # Architecture
 
+The runner uses one Python backend, a React client and a browser adapter.
+Read [REPORT](../REPORT.md) for the short explanation of decisions and trade-offs,
+or [system flow](submission/system-design.md) to follow a request.
+
+## The boundaries to preserve
+
+| Choice | Why it matters |
+| --- | --- |
+| Discovery uses a model; Replay does not. | Exploration and repeat execution need different levels of freedom. |
+| Typed JSON artifact plus separate app profile. | Keep workflow meaning separate from concrete controls. |
+| Action Gateway for all automation. | Apply the same policy and ownership rules in both modes. |
+| Browser handles stay in the adapter. | Other modules should not depend on Playwright. |
+| Session Controller owns control and generation. | Reject stale work and avoid racing the human. |
+| Evidence is sanitized before storage. | Useful diagnostics should not require raw secrets. |
+
+These remain **ACCEPTED BASELINE** decisions, not proof that every planned
+extension exists. [Progress](progress.md) records completed verification.
+
+## Current handoff exception and implementation status
+
+The owner approved native human input after the original baseline below.
+Physical clicks occur in the same retained browser outside Action Gateway;
+automated actions still use it. Fresh state must validate handback.
+The [native handoff record](subsystems/direct-browser-handoff.md) documents this
+explicit amendment.
+
+React, Discovery, Replay and the browser adapter are now implemented. The original
+P1.0-only statements and planned interfaces below describe the initial design
+stage. They do not override later authorization or establish current status.
+Desktop, voice and Teach are not implemented.
+
+<details>
+<summary>Original architecture record: responsibilities, flows and design constraints</summary>
+
 ## Document status
 
 This document describes the **ACCEPTED BASELINE**. It is architecture documentation, not evidence that components exist or behavior has been verified. Open choices are labeled **PROPOSED IMPLEMENTATION DETAIL**. Only completed tests recorded in `docs/progress.md` may be called **VERIFIED BEHAVIOR**.
@@ -179,3 +213,5 @@ These are design invariants, not verified claims. ADR-003 and ADR-008 define the
 P1.0 authorizes repository/package configuration, side-effect-free subsystem package markers, repository/dependency checks, deferred-directory documentation, and status updates. It does not authorize P1.1 contracts or any later subsystem implementation.
 
 After P1.0 review, the smallest next task is P1.1 core contracts and validation tests. It begins only with owner authorization. Required assignment execution remains ahead of optional teaching work.
+
+</details>

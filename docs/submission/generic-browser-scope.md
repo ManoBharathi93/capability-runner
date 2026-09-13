@@ -1,59 +1,68 @@
 # Supported browser scope
 
-The owner-authorized claim is: Profile-less Discovery supports previously unseen web applications
-within the current Browser Surface capabilities. Implementation and completed acceptance evidence
-are tracked separately in [progress](../progress.md); a scripted test is not live-model acceptance.
+Discovery can learn a workflow without a prepared target profile, **within the
+browser limits below**. It does not promise to operate every website.
+See [recorded checks](../progress.md) and the [product guide](test-product.md).
 
-The supported primitives are visible HTML text/search inputs, ordinary form submission, links,
-buttons, labelled result fields, tables, definition lists, and deterministic navigation. Standard
-roles, accessible names and label associations are preferred. The main document and at most three
-named same-origin frames are observed. CAPTCHA, canvas-only controls, inaccessible custom widgets,
-native desktop applications, cross-origin frame internals, select/file/download/media primitives,
-and open-ended exploration are unsupported.
+## Supported and unsupported controls
 
-There are two authoring paths. A known application uses its trusted ApplicationProfile and optional
-required completion targets. A new application starts with zero target bindings. BrowserSurfaceAdapter
-collects at most 64 visible elements, eight headings, short labels and nearby snippets. The model
-receives a presentation bounded to 16,000 characters, never a DOM dump. Input values are represented
-by goal-span references. Numeric identifiers and recognizable credential tokens are masked in the
-new-app presentation. This is a synthetic-sandbox feature, not universal PII or screenshot redaction.
+| Supported | Not supported |
+| --- | --- |
+| Visible text/search inputs, ordinary buttons and links | CAPTCHA, canvas-only or inaccessible custom controls |
+| Result labels, tables and definition lists | File upload/download, media and select primitives in generic automation |
+| Main page and up to three named same-origin frames | Cross-origin frame internals |
+| Bounded read-only navigation and the known demo search POST | Arbitrary writes, account creation and open-ended browsing |
 
-The model proposes strictly typed inspect, fill, click, complete, or unsupported/fail decisions.
-It cannot supply CSS, XPath, JavaScript, shell commands, Playwright code, or a confidence score.
-An element reference belongs to one observation. A new observation, navigation, or observed DOM
-mutation invalidates it; dispatch also checks that the uniquely resolved node is the original node.
-The same ActionGateway and SessionController enforce policy, ownership and generation.
+The adapter collects at most 64 elements and eight headings. The model's view is
+bounded to 16,000 characters. Discovery allows 12 turns, eight action attempts and
+300 seconds, with a repeated-action stop.
 
-Application URLs require operator configuration. Built-in demo origins are allowed; additional
-read-only sandbox entry URLs can be listed in `CAPABILITY_RUNNER_READ_ONLY_URLS` as a JSON array.
-This is an administrator assertion that GET routes in that path scope are read-only. Unknown effects
-are denied. The existing CoreBank search POST is separately allowed by its exact route in demo
-composition. Other POST requests, cross-origin requests, credentials in URLs, path escapes and
-destructive controls are blocked. Page instructions, model output and user goals cannot change this
-configuration. Do not add a real application merely because its URL is reachable.
+## How a new control becomes a saved binding
 
-Completion must cite current, visible, uniquely resolved result fields. Every supplied input must
-have matching displayed identity evidence; a populated search box is insufficient. Selected table
-category context must agree with the goal and the result page. The deterministic evaluator must
-extract every declared output successfully. Arbitrary English is accepted as input; some meanings,
-field structures and unnamed inputs cannot be verified by this bounded read-only extraction path
-and must return non-success. This does not prove arbitrary natural-language entailment.
+1. The adapter observes visible controls and issues temporary references.
+2. The model proposes a typed inspect, fill, click, complete or failure decision.
+3. The gateway checks the reference, ownership and policy before execution.
+4. The compiler turns verified properties into a durable application binding.
 
-The deterministic compiler derives semantic names and browser bindings from observed properties.
-Bindings prefer exact role/name and label resolution, with verified structural paths when necessary.
-Duplicate matches fail; the model cannot nominate a first match. Required bindings carry observation
-fingerprints and actual uniqueness/re-resolution evidence. A logical package stores a selector-free
-typed capability, an application profile, and integrity metadata as separate JSON files. Input
-instances and temporary element references do not become durable selectors or workflow literals.
+References expire on new observations, navigation or observed DOM changes.
+Dispatch also checks that the uniquely resolved node is the original node.
+Duplicate matches fail; there is no “just click the first one” fallback.
 
-Replay loads the package, checks origin/entry-path/title identity before actions, and uses the
-existing ReplayEngine and non-LLM StateEvaluator. Its construction imports no ModelClient and has no
-LLM fallback. Binding drift, ambiguity, wrong identity and application mismatch cause structured
-failure. Generated packages do not invent business outcomes from a successful trace; trusted-profile
-outcomes such as MEMBER_NOT_FOUND remain supported.
+The model cannot send CSS, XPath, JavaScript, shell commands or Playwright code.
+Input values use references to the goal. Numeric IDs and recognizable credential
+tokens are masked in the new-app presentation; that is not universal PII redaction.
 
-The product preview is an ephemeral PNG from the same managed browser. It is read-only, bounded and
-cache-disabled. Only the current frame is retained by the client. Operator actions continue through
-the existing typed intervention controls. Active run/session state is process-local. Discovery is
-bounded to 12 turns, eight action attempts and 300 seconds, with a repeated-action stop. Teach,
-voice and screenshare remain outside this milestone.
+## What authorizes an application
+
+Built-in demo origins are configured. An administrator may add sandbox entry URLs
+through the JSON array `CAPABILITY_RUNNER_READ_ONLY_URLS`.
+
+This asserts that GET routes in that scope are safe to read; HTTP GET alone does
+not prove the absence of side effects. Other POSTs, cross-origin requests,
+credentials in URLs, path escapes and destructive controls are blocked.
+Page text, the goal and the model cannot extend the allowlist.
+
+## What counts as completion
+
+The current page must show matching input identity and the requested account
+context, with unique visible output fields that the evaluator can parse.
+A filled search box or a model saying “done” is insufficient.
+
+Some natural-language meanings and field layouts cannot be verified. Those runs
+must return non-success. A generated package stores the capability, profile and
+integrity metadata, not invocation values or temporary references.
+
+Replay checks application identity and uses the saved bindings without a model.
+Missing targets, ambiguity, wrong identity and drift fail safely. An unobserved
+business outcome is not invented; trusted CoreBank MEMBER_NOT_FOUND behavior
+comes from its declared contract.
+
+## Preview and human control
+
+Preview images come from the managed browser and are transient and cache-disabled.
+The product's human takeover uses the actual headed browser; its preview is not
+interactive. Physical clicks bypass gateway policy and have bounded passive
+capture. The older typed operator path remains a CLI/test seam.
+
+Active sessions are process-local. Desktop, voice, screen sharing and Teach
+are not implemented.

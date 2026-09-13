@@ -1,5 +1,13 @@
 # Frontend Implementation
 
+The React frontend is implemented. This is its initial implementation record. Current native handoff and test results are recorded in progress.
+
+See [the screenshot guide](../submission/test-product.md) and
+[progress](../progress.md) for the reviewer path and current evidence.
+
+<details>
+<summary>Detailed visual record</summary>
+
 ## Scope
 
 P5.4b implements the optional React product/demo surface from the complete four-image reference set
@@ -108,3 +116,5 @@ accepted only in request bodies, never echoed, persisted in summaries, or includ
    `1448 x 1086`, stored under `docs/references/ui/implemented/`.
 5. Full Python gates only because P5.4b adds backend source/tests; existing CLI help and commands are
    rechecked and E-01/H-02 evidence remains unchanged.
+
+</details>

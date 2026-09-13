@@ -1,5 +1,28 @@
 # Assignment Requirement Traceability
 
+Use [readiness](readiness-report.md) for the current assessment. This page keeps
+the detailed original assignment audit for readers who want the full mapping.
+
+## Current map
+
+| Assignment area | Start here |
+| --- | --- |
+| Goal and real-model Discovery | [Through-line](../../evidence/through-line/summary.json) |
+| Typed artifact | [Saved capability](../../evidence/through-line/capabilities/lookup_savings_balance/1.0.0.json) |
+| Replay and errors | [Not-found evidence](../../evidence/exception/summary.json), [evaluation guide](../../evals/README.md) |
+| Guardrails and data handling | [REPORT Safety](../../REPORT.md#safety), [focused tests](manual-test-guide.md#cli-and-evaluation) |
+| Same-session human escalation | [Native handoff evidence](../../evidence/direct-browser/summary.json), [physical steps](test-product.md#5-physically-take-over-the-existing-browser) |
+| Desktop and tenant design | [REPORT](../../REPORT.md#heterogeneity--multi-tenant) |
+| Public deliverables | [README](../../README.md), [REPORT](../../REPORT.md), [evidence](../../evidence/README.md) |
+
+The native product handoff supersedes the older HTTP-control rows. Physical
+human acceptance is still open. PASS labels in the historical audit describe
+its recorded checks, not a new physical acceptance result. A second generated
+package does not establish one-artifact cross-tenant reuse.
+
+<details>
+<summary>Original detailed requirement matrix and audit findings</summary>
+
 ## Current native-browser handoff evidence
 
 The owner-requested native handoff supersedes the older controlled HTTP path in H-03/H-04
@@ -107,3 +130,5 @@ discovery-to-replay story.
   local Markdown links, required file existence, JSON/JSONL parsing, summary-relative paths,
   byte-identical evidence provenance, model-free exception/intervention commands, and intended-public
   privacy/portability patterns.
+
+</details>
