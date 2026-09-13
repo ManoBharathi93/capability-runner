@@ -2,6 +2,23 @@
 
 ## Physical input in the retained browser
 
+### Return-state diagnosis, 2026-09-13
+
+The owner reported `RESUME_STATE_UNVERIFIED` and confirmed returning from Member
+Details, which still contains the Savings and Checking rows. The retained run
+record shows ownership returned and fresh validation rejected the state before
+terminal cleanup closed the browser. There were no resumed automation actions or
+outputs. This is an incomplete human step, not evidence of a browser crash.
+
+The bounded fix is product guidance: state that the human must open Savings and
+leave that account visible, explain validation failure separately from cleanup,
+and retain the explanation when reopening a failed historical run. The existing
+validator and terminal cleanup remain authoritative. Automatically clicking the
+blocked control or declaring success on return would defeat this handoff contract.
+Check the UI's live and historical failure messages, plus the existing real-browser
+Savings/unchanged/Checking/closed cases. Physical successful acceptance is still
+pending; this reported attempt is a negative outcome.
+
 Take control grants ownership of the same browser. Human clicks happen there, outside gateway policy. Return uses fresh validation. Automated checks passed; physical acceptance remains pending.
 
 For current behavior, use [the product guide](../submission/test-product.md) and

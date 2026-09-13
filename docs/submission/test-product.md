@@ -87,6 +87,12 @@ Use a local desktop. The embedded image is only a preview.
 5. Return to the product. Click **Return control to automation** and stop
    interacting with the managed window.
 
+**Member Details is the starting page, not the finished step.** If you return
+while the Savings and Checking rows are still visible, expect
+`RESUME_STATE_UNVERIFIED` and no balance. The runner closes the browser after
+that failed validation to end the attempt. Start a fresh handoff, open Savings,
+and leave the Savings Account page visible before returning control.
+
 Expect **SUCCESS**, **generation 3**, the same surface ID, and 98765/USD.
 The browser closes after completion.
 

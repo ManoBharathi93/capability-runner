@@ -1,5 +1,31 @@
 # Progress
 
+## Explain an incomplete human step on return — 2026-09-13
+
+The owner reported `RESUME_STATE_UNVERIFIED` and confirmed that the managed
+browser still showed Member Details when control was returned. The run's events
+show human ownership and return, then rejected fresh validation. Its summary has
+three initial automated actions, no resumed actions, no outputs, and the same
+browser identity. The browser was closed during terminal cleanup after rejection.
+This is evidence of an incomplete human step, not successful physical acceptance.
+
+The UI now makes opening Savings explicit, distinguishes failed validation from
+an already-closed browser, and shows the explanation when reopening a failed run.
+Historical sign-in records use the saved blocked action to identify their scenario.
+The manual guide describes returning from Member Details as a negative case.
+Replay validation, ownership, cleanup, and backend contracts are unchanged.
+
+Completed checks are **VERIFIED BEHAVIOR**:
+
+| Check | Completed result |
+| --- | --- |
+| Native browser regression | `uv run pytest tests/end_to_end/test_direct_browser_handoff.py -q --junitxml=var/handoff-return-regression.xml`: 6 passed in 57.22 seconds. Savings succeeds; unchanged, Checking, and closed state cannot succeed. |
+| Frontend | `npm --prefix web test`: 15 passed. Covers immediate and historical validation messages, closed-browser distinction, and sign-in instructions. Production build and TypeScript check passed. |
+| Running product | Fresh browser reopened the reported historical run on the existing local server and verified the explanation and absence of live controls. No mutating API requests. Local record: `var/handoff-return-guidance.json`. |
+
+The existing backend process was not restarted. Refresh the product tab to load
+the rebuilt frontend. Successful physical human acceptance remains pending.
+
 ## Synthetic sign-in handoff and concept diagrams — 2026-09-13
 
 The owner authorized a login example and requested the two existing architecture

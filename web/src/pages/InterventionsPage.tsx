@@ -7,6 +7,19 @@ import { EmptyState, ErrorState, LoadingState, StatusBadge, formatDate, humanize
 import { useApi } from "../useApi";
 import type { Intervention } from "../types";
 
+function resumeFailureMessage(reason: string, signIn: boolean) {
+  if (reason === "BROWSER_SESSION_CLOSED") {
+    return "Resume did not succeed: the managed browser was already closed. Start a new handoff and keep that browser open until return validation finishes.";
+  }
+  if (reason === "RESUME_STATE_UNVERIFIED") {
+    const nextStep = signIn
+      ? "Sign in in the managed browser and wait for the Signed in as demo-reviewer message before returning control."
+      : "Click Open in the Savings row for member 67890 and leave Savings Account visible before returning control. Member Details alone is not sufficient.";
+    return `Resume did not succeed: Replay could not verify the required page state. No success was recorded. The runner then closed the browser to end this attempt. Start a new handoff. ${nextStep}`;
+  }
+  return `Resume did not succeed: ${humanize(reason)}. This attempt has ended. Review the run evidence before starting a new handoff.`;
+}
+
 export function InterventionsPage() {
   const { interventionId } = useParams();
   return interventionId ? <InterventionDetail key={interventionId} interventionId={interventionId} /> : <InterventionList />;
@@ -63,7 +76,7 @@ function InterventionDetail({ interventionId }: { interventionId: string }) {
   const [previewUnavailable, setPreviewUnavailable] = useState(false);
   const data = current ?? intervention.data;
   const live = Boolean(data?.active && !completion);
-  const signIn = data?.handoff_kind === "sign_in";
+  const signIn = data?.handoff_kind === "sign_in" || data?.blocked_action === "session.sign_in";
   useEffect(() => {
     if (!live || previewUnavailable || signIn) return;
     const interval = window.setInterval(() => setViewRevision((value) => value + 1), 2000);
@@ -85,7 +98,7 @@ function InterventionDetail({ interventionId }: { interventionId: string }) {
         setOutputs(outcome === "SUCCESS" ? result.outputs ?? null : null);
         setMessage(kind === "stop" ? "The session was stopped." : outcome === "SUCCESS" ?
           "Fresh browser validation passed. Replay completed without repeating earlier actions." :
-          `Resume did not succeed: ${humanize(result.reason_code ?? outcome)}. The browser session was closed; start a new handoff to try again.`);
+          resumeFailureMessage(result.reason_code ?? outcome, signIn));
       }
     } catch (requestError) { setMessage(errorMessage(requestError)); }
     finally { setBusy(false); }
@@ -95,14 +108,17 @@ function InterventionDetail({ interventionId }: { interventionId: string }) {
   if (!data) return null;
   const human = data.control_state === "operator_controlled";
   const state = completion ?? data.state_label;
+  const displayedMessage = message ?? (!live && ["VALIDATION_FAILED", "FAILURE"].includes(state)
+    ? resumeFailureMessage(data.reason_code, signIn) : null);
   return <div className="intervention-page page-enter">
     <div className="breadcrumbs"><NavLink to="/interventions"><ArrowLeft size={15} /> Interventions</NavLink><span>/</span><span>{data.run_id}</span></div>
     <div className="run-title"><div><h2>Run / {data.capability_id}</h2><p>Run ID: {data.run_id}</p></div><StatusBadge status={state} /></div>
     <section className="intervention-banner"><span><Hand size={30} /></span><div>
       <h3>{live ? "Human intervention required" : "Human intervention recorded"}</h3>
-      <p>{data.reason ?? data.summary ?? "Approval is required before opening Savings."}</p>
-      <small>{live ? (signIn ? "Take control and sign in in the managed browser. Return control here to let automation complete the savings lookup." : "Automation is paused. Take control, click Open in the Savings row of the managed browser, then return control here.") : "This historical record has no live browser session."}</small>
+      <p>{live ? (signIn ? "Your task: sign in in the managed browser, then return control." : "Your task: click Open in the Savings row, then return from the Savings Account page.") : `Recorded outcome: ${humanize(state)}.`}</p>
+      <small>{live ? (signIn ? "Wait for Signed in as demo-reviewer after signing in. Automation will then complete the savings lookup." : "Member Details is the starting page. Take control, open Savings for member 67890 in the separate managed browser, and leave the account page visible.") : "This historical record has no live browser session."}</small>
     </div></section>
+    {displayedMessage && <p role="status" className={!live && state !== "SUCCESS" ? "inline-error" : "audit-note"}>{displayedMessage}</p>}
     <div className="intervention-grid"><section className="panel live-surface">
       <div className="panel-heading"><h3>Managed browser preview</h3><span className="panel-count">Preview only</span></div>
       {live ? <div className="surface-frame"><div className="browser-chrome"><i /><i /><i /><span>Interact in the managed browser window</span></div>
@@ -134,6 +150,5 @@ function InterventionDetail({ interventionId }: { interventionId: string }) {
           <Check size={17} />Return control to automation</button>
         <button className="button button-danger" type="button" disabled={busy} onClick={() => transition("stop")}><Square size={15} />Stop</button>
       </div></section>}
-    {message && <p role="status" className={completion && completion !== "SUCCESS" ? "inline-error" : "audit-note"}>{message}</p>}
   </div>;
 }
