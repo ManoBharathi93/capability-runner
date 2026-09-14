@@ -1,0 +1,194 @@
+{
+  "profile_id": "web_41d5f001c2db3787",
+  "application_family": "web_41d5f001c2db3787",
+  "variant": "generated-v1",
+  "entry_point": "http://127.0.0.1:55434/",
+  "target_bindings": [
+    {
+      "semantic_target": {
+        "value": "page.x28adf875.member_id"
+      },
+      "surface_kind": "browser",
+      "frame": {
+        "name": "work-area",
+        "description": null
+      },
+      "row_scope": null,
+      "locator_candidates": [
+        {
+          "kind": "role",
+          "role": "textbox",
+          "name": "Member ID",
+          "exact": true
+        }
+      ],
+      "description": "Member ID",
+      "review_notes": null,
+      "observation_id": null,
+      "ephemeral_ref": null
+    },
+    {
+      "semantic_target": {
+        "value": "page.xbc7ddcb6.search"
+      },
+      "surface_kind": "browser",
+      "frame": {
+        "name": "work-area",
+        "description": null
+      },
+      "row_scope": null,
+      "locator_candidates": [
+        {
+          "kind": "role",
+          "role": "button",
+          "name": "Search",
+          "exact": true
+        }
+      ],
+      "description": "Search",
+      "review_notes": null,
+      "observation_id": null,
+      "ephemeral_ref": null
+    },
+    {
+      "semantic_target": {
+        "value": "page.x2cbb40b8.open"
+      },
+      "surface_kind": "browser",
+      "frame": {
+        "name": "work-area",
+        "description": null
+      },
+      "row_scope": {
+        "table_context": {
+          "kind": "css",
+          "selector": "body > div:nth-of-type(1) > div:nth-of-type(1) > table:nth-of-type(1)",
+          "structural_fallback": true
+        },
+        "row_match": {
+          "column": "Member ID",
+          "value": {
+            "kind": "input",
+            "name": "member_id"
+          }
+        }
+      },
+      "locator_candidates": [
+        {
+          "kind": "role",
+          "role": "link",
+          "name": "Open",
+          "exact": true
+        }
+      ],
+      "description": "Open",
+      "review_notes": null,
+      "observation_id": null,
+      "ephemeral_ref": null
+    },
+    {
+      "semantic_target": {
+        "value": "page.x7d4ff084.open"
+      },
+      "surface_kind": "browser",
+      "frame": {
+        "name": "work-area",
+        "description": null
+      },
+      "row_scope": {
+        "table_context": {
+          "kind": "css",
+          "selector": "body > div:nth-of-type(1) > div:nth-of-type(1) > table:nth-of-type(1)",
+          "structural_fallback": true
+        },
+        "row_match": {
+          "column": "Account Type",
+          "value": {
+            "kind": "literal",
+            "value": "Savings"
+          }
+        }
+      },
+      "locator_candidates": [
+        {
+          "kind": "role",
+          "role": "link",
+          "name": "Open",
+          "exact": true
+        }
+      ],
+      "description": "Open",
+      "review_notes": null,
+      "observation_id": null,
+      "ephemeral_ref": null
+    },
+    {
+      "semantic_target": {
+        "value": "page.xb847800c.account_type"
+      },
+      "surface_kind": "browser",
+      "frame": {
+        "name": "work-area",
+        "description": null
+      },
+      "row_scope": null,
+      "locator_candidates": [
+        {
+          "kind": "css",
+          "selector": "#account-type",
+          "structural_fallback": true
+        }
+      ],
+      "description": "Account type:",
+      "review_notes": null,
+      "observation_id": null,
+      "ephemeral_ref": null
+    },
+    {
+      "semantic_target": {
+        "value": "page.xb614a083.current_balance"
+      },
+      "surface_kind": "browser",
+      "frame": {
+        "name": "work-area",
+        "description": null
+      },
+      "row_scope": null,
+      "locator_candidates": [
+        {
+          "kind": "css",
+          "selector": "#account-balance",
+          "structural_fallback": true
+        }
+      ],
+      "description": "Current balance:",
+      "review_notes": null,
+      "observation_id": null,
+      "ephemeral_ref": null
+    },
+    {
+      "semantic_target": {
+        "value": "page.xf5119c35.member_id"
+      },
+      "surface_kind": "browser",
+      "frame": {
+        "name": "work-area",
+        "description": null
+      },
+      "row_scope": null,
+      "locator_candidates": [
+        {
+          "kind": "css",
+          "selector": "#member-identity",
+          "structural_fallback": true
+        }
+      ],
+      "description": "Member ID:",
+      "review_notes": null,
+      "observation_id": null,
+      "ephemeral_ref": null
+    }
+  ],
+  "discovery_only": false,
+  "observation_rules": []
+}

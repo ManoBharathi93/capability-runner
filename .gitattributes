@@ -1,0 +1,4 @@
+# Keep curated capture bytes and package integrity hashes unchanged across checkouts.
+evidence/surface-observation/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+evidence/surface-observation/*.jsonl -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+evidence/surface-observation/package/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

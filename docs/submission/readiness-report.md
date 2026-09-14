@@ -18,6 +18,7 @@ create accounts.
 | Errors and false-success prevention | [Not-found result](../../evidence/exception/summary.json), [failure log](../../evidence/failure/evidence.jsonl), [evaluation](../../evals/README.md) | Safe failure counts as a passing negative test, not successful Discovery. |
 | Second app and Checking | [Checking result](../../evidence/checking/ui-summary.json) | Its own package; not one unchanged artifact across tenants. |
 | Human handoff | [Same-browser test evidence](../../evidence/direct-browser/summary.json) | Automated input passed; physical acceptance is pending. |
+| Fresh generic observations | [Hardening acceptance](../../evidence/surface-observation/README.md) | Five real model calls with current refs, bounded context and independently checked fresh Replay. No vision or universal page support. |
 | Delivery and communication | Public source, [README](../../README.md), [REPORT](../../REPORT.md), [screenshot guide](test-product.md) | Clear writing cannot replace a working required flow. |
 
 ## Remaining acceptance check
@@ -32,10 +33,11 @@ Do not replace that proof with an automated browser click.
 
 ## Recorded checks
 
-The latest full Python record has **380 tests passing**. The sign-in change passed
-**38 focused Python tests and 12 frontend tests**.
-Eight live-provider tests were excluded from ordinary pytest. Typecheck, build,
-Ruff, Pyright and lock checks also passed. The banking evaluation passed 13 cases.
+Surface observation hardening passed **402 full Python tests**, with eight
+live-provider cases excluded. Its separate real-provider acceptance passed, as
+did Ruff, Pyright and the lock check. These results are recorded in progress.
+The earlier frontend record has 17 passing tests plus typecheck/build; no frontend
+code changed in this hardening work. The earlier banking evaluation passed 13 cases.
 
 These are dated results in [progress](../progress.md), not tests rerun by opening
 this page. The [manual checklist](manual-test-guide.md) gives reproducible checks.

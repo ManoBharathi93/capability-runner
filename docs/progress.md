@@ -1,5 +1,54 @@
 # Progress
 
+## Surface observation hardening — 2026-09-14
+
+**ACCEPTED BASELINE:** the owner authorized surface observation hardening only:
+versioned refs, bounded perception, normalized changes, adversarial checks and
+one real-provider acceptance. Existing action authority, model-free Replay,
+business scope and assignment status remain unchanged. See the
+[subsystem audit](subsystems/surface-observation-hardening.md) and
+[ADR-011](adr/011-surface-observation-generations.md).
+
+Before this change, generic Discovery used session-counted `eN` refs plus an
+observation UUID, original-node checks and mutation watches. It already combined
+some ARIA/HTML/DOM facts and refreshed each turn. Missing pieces were explicit
+generations, complete truncation metadata, stable state deltas and observation
+based no-progress detection. Those are now implemented. Future vision remains
+a data seam only; no new perception service, model or execution authority exists.
+
+Completed checks below are **VERIFIED BEHAVIOR**:
+
+| Check | Recorded result |
+| --- | --- |
+| Initial focused regression | 22 surface/contract tests passed in 9.17s; 27 generic package/contract tests passed in 108.69s. Savings and Checking packages replayed with independently specified outputs and unchanged model call counters. |
+| Hardening checks | 43 source/bounds/contract/architecture cases passed in 21.88s; three adversarial Discovery cases passed in 24.92s. No stale/fabricated ref reached dispatch. The extended real-gateway search → results → details → Savings check passed with the perception test: two cases in 21.29s. |
+| Full Python regression | Final `uv run pytest -q --junitxml=var/surface-observation-final.xml`: 402 passed, eight live cases deselected, 546.48s. Includes the summary-only truncation regression; its focused suite passed 33 cases in 0.67s. |
+| Static/configuration gates | `uv run ruff check .`, `uv run pyright`, and `uv lock --check` passed after the final runtime edit. Pyright reported zero errors or warnings. No frontend source changed. |
+| Live generic acceptance | `uv run python scripts/verify_surface_observations.py --live --output-root var/observation-acceptance-final`: five Gemma calls, four actions, generations 2–6, every ref current. Generated package then fresh Replay for a different member: 438221/USD, four steps, zero model calls. [Unchanged logs, package and summary](../evidence/surface-observation/README.md). |
+| CLI smoke | `uv run capability-runner demo exception --output-root var/observation-cli`: exit 0, `BUSINESS_OUTCOME / MEMBER_NOT_FOUND`, zero Replay model calls. |
+| Measured context | Three fixture pages were measured before and after. Model characters/bytes grew from 1255/2590/1733 to 2014/4278/2889. The added source/generation/delta metadata has a cost; no token reduction is claimed. [Measurements](../evidence/surface-observation/README.md#size-measurements). |
+
+The first live acceptance script failed after successful Discovery and Replay
+because it required exactly two outputs and the model also emitted `account_type`.
+Its summary is retained. The script now verifies that optional field against
+`Savings`, while retaining exact balance/currency checks and rejecting unexpected
+fields. A separate live run passed; no response or event log was edited.
+
+The final audit found summary text could be cut at 512 characters without marking
+truncation when the larger aggregate budget was not reached. The marker and a
+focused regression now cover that case. The 402-case full rerun verifies this final state.
+
+Evidence stores safe counts/fingerprints, never complete observations. Curated
+copies were checked byte-for-byte; scoped Git attributes preserve package hashes
+across checkouts. REPORT retains the exact seven headings and is 1,381 words.
+All 99 local links/anchors, package hashes, absence of ephemeral refs in durable artifacts, and
+known provider secret/endpoint and private-path scans passed before publication.
+
+This milestone does not establish physical human acceptance, cross-tenant reuse,
+production authentication or universal PII redaction. Busy/delayed pages, weak
+semantics, bounded text and provider variability can still fail conservatively.
+MCP, HAR capture, bulk actions, vision runtime, voice and Teach were not added.
+
 ## Sign-in scenario selection and stale backend — 2026-09-13
 
 The owner reported Member Details after requesting the sign-in example. Inspection

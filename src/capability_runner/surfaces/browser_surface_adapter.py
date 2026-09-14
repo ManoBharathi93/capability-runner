@@ -63,8 +63,11 @@ from capability_runner.contracts.surfaces import (
     TargetInspectionResult,
 )
 from capability_runner.surfaces.browser_observation import (
+    OBSERVATION_LIMITS,
+    bound_observation,
     fingerprint,
     method_allowed,
+    observation_delta,
     origin_of,
     safe_slug,
     within_scope,
@@ -101,6 +104,9 @@ class _SessionState:
     profile: ApplicationProfile
     input_values: dict[str, str] = field(default_factory=_empty_input_values)
     observation_id: str = ""
+    generation: int = 0
+    previous_observation: BrowserObservation | None = None
+    observed_frames: tuple[Frame, ...] = ()
     ref_counter: int = 0
     observed: dict[str, InteractiveElement] = field(
         default_factory=lambda: dict[str, InteractiveElement]()
@@ -225,9 +231,13 @@ class BrowserSurfaceAdapter:
 
     async def observe_browser(self, session: SurfaceSessionRef) -> BrowserObservation:
         state = await self._require_session(session)
+        # Invalidate first, even if collecting the replacement snapshot fails.
+        state.generation += 1
+        state.observation_id = uuid4().hex
+        state.ref_counter = 0
         for revision in state.revisions:
             try:
-                await revision.evaluate("r => r.observer.disconnect()")
+                await revision.evaluate("r => r.dispose()")
                 await revision.dispose()
             except Exception:
                 pass
@@ -236,15 +246,24 @@ class BrowserSurfaceAdapter:
         state.revisions.clear()
         state.nodes.clear()
         state.observed.clear()
-        state.observation_id = uuid4().hex
         elements: list[InteractiveElement] = []
         headings: list[str] = []
-        truncated = False
-        for frame in state.page.frames[:4]:
+        state.observed_frames = tuple(state.page.frames)
+        truncated = len(state.observed_frames) > OBSERVATION_LIMITS["max_frames"]
+        for frame in state.observed_frames[: OBSERVATION_LIMITS["max_frames"]]:
+            if not frame.url.startswith(("http://", "https://")):
+                truncated = True
+                continue
             if origin_of(frame.url) != origin_of(state.page.url):
+                truncated = True
                 continue
             if frame != state.page.main_frame and not frame.name:
+                truncated = True
                 continue
+            # Navigation and actionability waits are bounded by the existing adapter timeout.
+            await frame.wait_for_load_state("domcontentloaded", timeout=self._default_timeout_ms)
+            if not await frame.evaluate(_OBSERVATION_READY, self._default_timeout_ms):
+                raise BrowserSurfaceError("OBSERVATION_NOT_STABLE")
             revision = await frame.evaluate_handle(_MUTATION_WATCH)
             state.revisions.append(revision)
             raw: dict[str, Any] = await frame.evaluate(_INTERACTIVE_SNAPSHOT)
@@ -255,7 +274,7 @@ class BrowserSurfaceAdapter:
                     truncated = True
                     break
                 state.ref_counter += 1
-                ref = f"e{state.ref_counter}"
+                ref = f"{state.generation}:e{state.ref_counter}"
                 role, name, label = item["role"], item["name"], item["label"]
                 target = SemanticTargetRef(
                     value=f"page.{safe_slug(role)}.{safe_slug(label or name)}"
@@ -303,9 +322,11 @@ class BrowserSurfaceAdapter:
                     current_value_state=item["value_state"],
                     enabled=item["enabled"],
                     nearby_text_summary=item["nearby"],
+                    structural_context=item["context"],
+                    perception_sources=tuple(item["sources"]),
                     text=item["text"],
                     frame_identity=frame.name or "main",
-                    structural_fingerprint=fingerprint(json.dumps([role, label, item["path"]])),
+                    structural_fingerprint=fingerprint(json.dumps([role, item["path"]])),
                     action_kind=item["action_kind"],
                     destination=item["destination"],
                     method=item["method"],
@@ -313,16 +334,32 @@ class BrowserSurfaceAdapter:
                     match_count=count,
                 )
                 elements.append(element)
-                state.observed[ref] = element
-        return BrowserObservation(
-            observation_id=state.observation_id,
-            title=(await state.page.title())[:160],
-            origin=origin_of(state.page.url),
-            path=re.sub(r"\d+", "_", urlsplit(state.page.url).path)[:300],
-            headings=tuple(headings[:8]),
-            elements=tuple(elements),
-            truncated=truncated,
+        title = await state.page.title()
+        observation = bound_observation(
+            BrowserObservation(
+                observation_id=state.observation_id,
+                generation=state.generation,
+                page_identity=state.page_id,
+                title=title[:160],
+                origin=origin_of(state.page.url),
+                path=re.sub(r"\d+", "_", urlsplit(state.page.url).path)[:300],
+                headings=tuple(headings[:8]),
+                elements=tuple(elements),
+                truncated=truncated or len(headings) > 8 or len(title) > 160,
+            )
         )
+        if state.previous_observation is not None:
+            observation = observation.model_copy(
+                update={
+                    "change_summary": observation_delta(state.previous_observation, observation),
+                }
+            )
+        state.observed = {item.ephemeral_ref: item for item in observation.elements}
+        for ref in tuple(state.nodes):
+            if ref not in state.observed:
+                await state.nodes.pop(ref).dispose()
+        state.previous_observation = observation
+        return observation
 
     async def inspect_bound_element(
         self,
@@ -350,11 +387,19 @@ class BrowserSurfaceAdapter:
         element_ref: str,
     ) -> InteractiveElement:
         state = await self._require_session(session)
-        if observation_id != state.observation_id or element_ref not in state.observed:
+        generation = re.fullmatch(r"([1-9][0-9]{0,15}):e[1-9][0-9]{0,4}", element_ref)
+        if (
+            observation_id != state.observation_id
+            or generation is None
+            or int(generation[1]) < state.generation
+            or tuple(state.page.frames) != state.observed_frames
+        ):
             raise BrowserSurfaceError("STALE_ELEMENT_REF")
+        if int(generation[1]) > state.generation or element_ref not in state.observed:
+            raise BrowserSurfaceError("UNKNOWN_ELEMENT_REF")
         try:
             for revision in state.revisions:
-                if not await revision.evaluate("r => r.version === 0 && r.document === document"):
+                if not await revision.evaluate("r => r.valid()"):
                     raise BrowserSurfaceError("STALE_ELEMENT_REF")
             node = state.nodes[element_ref]
             if not await node.is_visible():
@@ -849,22 +894,83 @@ def resolution_message(resolution: LocatorResolutionOutcome, binding: BrowserTar
     return f"Resolved {binding.semantic_target.value}"
 
 
+_OBSERVATION_READY = """timeout => new Promise(resolve => {
+    let revision=0, previous=-1, quietFrames=0, animation;
+    const observer=new MutationObserver(() => revision++);
+    observer.observe(document.documentElement,
+      {subtree:true, childList:true, attributes:true, characterData:true});
+    const finish = stable => {
+      observer.disconnect(); clearTimeout(deadline);
+      cancelAnimationFrame(animation); resolve(stable);
+    };
+    const deadline=setTimeout(() => finish(false), timeout);
+    const check = () => {
+      quietFrames=revision===previous ? quietFrames+1 : 0;
+      previous=revision;
+      if(quietFrames>=2) finish(true);
+      else animation=requestAnimationFrame(check);
+    };
+    animation=requestAnimationFrame(check);
+})"""
+
+
 _MUTATION_WATCH = """() => {
     const state = {version: 0, document};
-    state.observer = new MutationObserver(() => state.version++);
+    // Values stay inside this page; only validity crosses the adapter boundary.
+    const values = () => [...document.querySelectorAll('input,textarea,select')].slice(0,600)
+      .map(el => [el, el.value, el.checked, el.disabled]);
+    const initial = values();
+    const changed = () => state.version++;
+    state.observer = new MutationObserver(changed);
     state.observer.observe(document.documentElement,
         {subtree: true, childList: true, attributes: true, characterData: true});
+    document.addEventListener('input', changed, true);
+    document.addEventListener('change', changed, true);
+    state.valid = () => {
+      const current=values();
+      return state.version === 0 && state.document === document &&
+        initial.length === current.length && initial.every((row, i) =>
+          row.every((value, j) => value === current[i][j]));
+    };
+    state.dispose = () => {
+      state.observer.disconnect();
+      document.removeEventListener('input', changed, true);
+      document.removeEventListener('change', changed, true);
+    };
     return state;
 }"""
 
 # Adapter-owned fixed code. Never taken from a model response or application text.
 _INTERACTIVE_SNAPSHOT = r"""() => {
-  const clean = (s, n=160) => String(s || '').replace(/\s+/g, ' ').trim().slice(0,n);
+  let truncated=false;
+  const clean = (s, n=160) => {
+    const value=String(s || '').replace(/\s+/g, ' ').trim();
+    if(value.length>n) truncated=true;
+    return value.slice(0,n);
+  };
   const visible = el => !!el.getClientRects().length &&
     getComputedStyle(el).visibility !== 'hidden' &&
-    !el.closest('[hidden],[aria-hidden="true"],script,style,noscript');
+    !el.closest('[hidden],[inert],[aria-hidden="true"],script,style,noscript,template');
+  // Read only rendered text nodes, with a traversal and character budget.
+  const textOf = el => {
+    if(!el) return '';
+    const walker=document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let node, result='', count=0;
+    while((node=walker.nextNode())) {
+      if(++count>600 || result.length>1024) {truncated=true; break;}
+      if(node.parentElement && visible(node.parentElement)) {
+        const text=node.textContent || '';
+        if(text.length>1024) truncated=true;
+        result+=' '+text.slice(0,1024);
+      }
+    }
+    return result.replace(/\s+/g, ' ').trim();
+  };
   const path = el => {
     if (el.id && /^[a-zA-Z][a-zA-Z_-]{0,60}$/.test(el.id)) return '#' + el.id;
+    const testId=el.getAttribute('data-testid');
+    if(testId && /^[a-zA-Z][a-zA-Z_-]{0,60}$/.test(testId))
+      return '[data-testid="'+testId+'"]';
     const parts=[];
     while(el && el.tagName !== 'BODY') {
       let i=1, sib=el.previousElementSibling;
@@ -875,48 +981,75 @@ _INTERACTIVE_SNAPSHOT = r"""() => {
   };
   const elements=[];
   const nodes=document.querySelectorAll('input,textarea,button,a[href],[role="button"],'
-    +'[role="link"],output,dd,p > span,td,[role="status"],[role="alert"]');
+    +'[role="link"],[role="textbox"],output,dd,p > span,td,[role="status"],[role="alert"]');
   let scanned=0;
   for(const el of nodes) {
-    if(++scanned > 600 || elements.length >= 64) break;
+    if(++scanned > 600 || elements.length >= 64) {truncated=true; break;}
     if(!visible(el)) continue;
-    const tag=el.tagName.toLowerCase(), type=clean(el.type,30);
-    if(type==='hidden' || type==='password' || type==='file') continue;
-    if(['td','dd','span'].includes(tag) && el.querySelector('a,button,input,output,span')) continue;
-    const labelEl=el.labels && el.labels[0];
+    const tag=el.tagName.toLowerCase(), type=clean(el.type,30).toLowerCase();
+    const autocomplete=el.getAttribute('autocomplete') || '';
+    if(['hidden','password','file'].includes(type) ||
+      /password|one-time-code|username|cc-/.test(autocomplete)) continue;
+    if(['td','dd','span'].includes(tag) &&
+      [...el.querySelectorAll('a,button,input,output,span')].some(visible)) continue;
+    const labels=el.labels ? [...el.labels].slice(0,4) : [];
     const labelled=el.getAttribute('aria-labelledby');
-    const ariaLabel=clean(el.getAttribute('aria-label') ||
-      (labelled && document.getElementById(labelled)?.innerText));
-    let label=ariaLabel || clean(labelEl?.innerText);
-    if(!label && tag==='dd') label=clean(el.previousElementSibling?.innerText);
-    if(!label && tag==='span') label=clean(el.parentElement?.querySelector('strong')?.innerText);
-    if(!label && tag==='td') label=clean(
-      el.closest('table')?.querySelectorAll('thead th')[el.cellIndex]?.innerText);
-    if(/password|secret|token|credential|social security|email/i.test(label)) continue;
-    const text=clean(el.innerText,256);
-    const role=clean(el.getAttribute('role') ||
-      (tag==='a'?'link':tag==='button'?'button':['input','textarea'].includes(tag)?'textbox':'text'),40);
-    const name=ariaLabel || clean(labelEl?.innerText) ||
+    const ariaText=labelled ? labelled.split(/\s+/).slice(0,8)
+      .map(id=>textOf(document.getElementById(id))).join(' ').trim() : '';
+    const ariaLabel=clean(ariaText || el.getAttribute('aria-label'));
+    const htmlLabel=clean(labels.map(textOf).join(' '));
+    let label=ariaLabel || htmlLabel;
+    let domLabel=false;
+    if(!label && tag==='dd') {label=clean(textOf(el.previousElementSibling)); domLabel=true;}
+    if(!label && tag==='span') {
+      label=clean(textOf(el.parentElement?.querySelector('strong'))); domLabel=true;
+    }
+    if(!label && tag==='td') {
+      label=clean(textOf(el.closest('table')?.querySelectorAll('thead th')[el.cellIndex]));
+      domLabel=true;
+    }
+    const sensitive=/password|secret|token|credential|social security|email|one.time.code/i;
+    if(sensitive.test(label)) continue;
+    const text=clean(textOf(el),256);
+    const nativeRole=tag==='a'?'link':tag==='button' ||
+      (tag==='input' && ['submit','button','reset','image'].includes(type))?'button':
+      ['input','textarea'].includes(tag)?'textbox':'text';
+    const role=clean(el.getAttribute('role') || nativeRole,40);
+    const name=ariaLabel || htmlLabel ||
       (['link','button'].includes(role)?clean(text || el.value):label);
-    const action_kind=role==='textbox' && ['text','search','number','tel',''].includes(type)?'fill':
+    const fillable=['text','search','number','tel','textarea',''].includes(type);
+    const action_kind=role==='textbox' && fillable?'fill':
       ['link','button'].includes(role)?'click':null;
     if(!action_kind && (!text || !label)) continue;
-    const form=el.form;
+    const form=el.form || el.closest('form');
     const destination=tag==='a'?el.href:form?form.action:null;
     const method=tag==='a'?'GET':form?String(form.method || 'get').toUpperCase():'';
     const row=el.closest('tbody tr'), table=row?.closest('table');
     const rowCell=row?.querySelector('td'), rowHeader=table?.querySelector('thead th');
-    const nearby=clean(row?.innerText || label,200);
+    const formName=clean(form?.getAttribute('aria-label') || textOf(form?.querySelector('legend')));
+    const nearby=clean(row?textOf(row):label,200);
+    const context=clean(row?'row: '+textOf(row):form?'form'+(formName?': '+formName:''):'',200);
+    const sources=[];
+    if(ariaLabel || el.hasAttribute('role')) sources.push('aria');
+    if(htmlLabel || nativeRole!=='text') sources.push('html');
+    if(domLabel || row || form || text) sources.push('dom');
     const item={role,name,label:label || name,input_type:type,
       value_state:action_kind==='fill'?(el.value?'set':'empty'):'not_applicable',
       enabled:!el.disabled && el.getAttribute('aria-disabled')!=='true',
-      text:action_kind==='fill'?'':text, nearby, action_kind,destination,method,
+      text:action_kind==='fill'?'':text, nearby, context, sources, action_kind,destination,method,
       path:path(el),aria_label:ariaLabel};
     if(rowCell && rowHeader && table) Object.assign(item,
-      {row_value:clean(rowCell.innerText),row_column:clean(rowHeader.innerText),table_path:path(table)});
+      {row_value:clean(textOf(rowCell)),row_column:clean(textOf(rowHeader)),table_path:path(table)});
     if(item.path.length<=240 && (!item.table_path || item.table_path.length<=240))
       elements.push(item);
+    else truncated=true;
   }
-  return {elements, headings:[...document.querySelectorAll('h1,h2,h3')].filter(visible)
-    .slice(0,8).map(el=>clean(el.innerText)), truncated:scanned>600 || elements.length>=64};
+  const headings=[]; let headingCount=0;
+  for(const el of document.querySelectorAll('h1,h2,h3,[role="heading"]')) {
+    if(++headingCount>600) {truncated=true; break;}
+    if(!visible(el)) continue;
+    if(headings.length>=8) {truncated=true; break;}
+    headings.push(clean(textOf(el)));
+  }
+  return {elements, headings, truncated};
 }"""

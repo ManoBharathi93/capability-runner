@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -58,6 +59,7 @@ def test_unprofiled_discovery_compiles_and_fresh_replay_has_no_model(
             finally:
                 stored.close()
             payload = run.package.model_dump_json()
+            assert not re.search(r'"[1-9][0-9]*:e[1-9][0-9]*"', payload)
             assert "67890" not in payload
             assert "987.65" not in payload
             assert "51.20" not in payload

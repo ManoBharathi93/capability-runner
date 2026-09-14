@@ -96,6 +96,19 @@ Results go to `var/demo-runs/<run-id>/`: `summary.json`, `evidence.jsonl`, and,
 for Discovery, the saved capability. Use `--output-root PATH` for another location.
 See [command details](docs/submission/demo-entrypoints.md).
 
+## How Discovery sees a page
+
+For an app without a prepared profile, the adapter combines ARIA/native control
+names with bounded visible labels, forms, table rows and frame context. Each
+fresh view gives controls temporary refs such as `12:e4`. Old refs cannot act.
+After an action, Discovery waits within a limit, observes again, and compares
+what changed. Repeated unchanged state stops the run. Saved bindings contain
+stable locators, not these temporary refs; Replay still calls no model.
+
+The [observation evidence](evidence/surface-observation/README.md) shows a real
+run and measured context sizes. This is bounded browser perception, not vision
+or universal website support.
+
 ## Verify it
 
 ```powershell

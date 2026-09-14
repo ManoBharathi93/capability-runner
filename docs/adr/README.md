@@ -5,6 +5,9 @@ would revisit it. The accepted decisions remain in the expandable record.
 
 ## Decisions at a glance
 
+[ADR-011: Fresh, bounded surface observations](011-surface-observation-generations.md)
+records the current generation, perception and no-progress decision.
+
 | Decision | Reason | Main cost |
 | --- | --- | --- |
 | One backend process | Keep session/control transitions easy to reason about. | No crash recovery for active browsers. |

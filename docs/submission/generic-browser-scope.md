@@ -13,9 +13,17 @@ See [recorded checks](../progress.md) and the [product guide](test-product.md).
 | Main page and up to three named same-origin frames | Cross-origin frame internals |
 | Bounded read-only navigation and the known demo search POST | Arbitrary writes, account creation and open-ended browsing |
 
-The adapter collects at most 64 elements and eight headings. The model's view is
-bounded to 16,000 characters. Discovery allows 12 turns, eight action attempts and
-300 seconds, with a repeated-action stop.
+The adapter collects at most 64 elements, eight headings and four frames. Nearby
+and structural context each stop at 200 characters. Normalized text has an 8,192
+character budget; the complete snapshot stays below 65,536 UTF-8 bytes. Model
+context has a separate 16,000-character cap. Truncation is explicit and deterministic.
+Discovery allows 12 turns, eight action attempts and 300 seconds. Two successive
+unchanged fingerprints stop it, alongside the existing repeated-action guard.
+
+ARIA names/roles and native HTML semantics take precedence over bounded DOM
+context. Source tags identify actual contributors. There is no full accessibility
+tree dump, raw HTML prompt or vision runtime. Credential input values, hidden
+content and scripts/styles are excluded. This does not cover arbitrary PII.
 
 ## How a new control becomes a saved binding
 
@@ -24,9 +32,19 @@ bounded to 16,000 characters. Discovery allows 12 turns, eight action attempts a
 3. The gateway checks the reference, ownership and policy before execution.
 4. The compiler turns verified properties into a durable application binding.
 
-References expire on new observations, navigation or observed DOM changes.
-Dispatch also checks that the uniquely resolved node is the original node.
+Each observation advances a session-local generation. A ref such as `12:e4`
+belongs to that generation and observation UUID. Old generations fail with
+`STALE_ELEMENT_REF` before locator lookup; invented current/future refs fail with
+`UNKNOWN_ELEMENT_REF`. Local `e4` may repeat under a new generation without reuse.
+References expire on new observations, navigation or observed DOM/control changes.
+Dispatch also checks that the uniquely resolved node in its frame is the original node.
 Duplicate matches fail; there is no “just click the first one” fallback.
+
+After an action, the adapter awaits document load and two DOM-quiet animation
+frames within its configured timeout. It does not prove that all asynchronous
+business work has settled. Fresh refs, bounded delta counts and fingerprints
+describe the next view. IDs and recognizable clocks/UUIDs do not count as progress.
+See [acceptance and size measurements](../../evidence/surface-observation/README.md).
 
 The model cannot send CSS, XPath, JavaScript, shell commands or Playwright code.
 Input values use references to the goal. Numeric IDs and recognizable credential

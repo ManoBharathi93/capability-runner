@@ -14,6 +14,7 @@ make a run look successful.
 | Does Checking work on another app? | [Checking summary](checking/ui-summary.json) | Real-model Discovery, then different-input Replay: 15840/USD, zero Replay calls. |
 | Does the native handoff retain the browser? | [Direct-browser summary](direct-browser/summary.json) | Same Page/context/session, ownership changes, validated continuation. Automated input, not physical acceptance. |
 | Can a human sign in before automation continues? | [Sign-in handoff](login-handoff/README.md) | Synthetic login, fresh state validation, then four model-free lookup actions. Automated input, not physical acceptance. |
+| Are generic observations fresh and bounded? | [Surface observation acceptance](surface-observation/README.md) | Current-generation refs in five real model calls, safe deltas, generated package and independently checked fresh Replay. |
 
 ## Reading the records
 

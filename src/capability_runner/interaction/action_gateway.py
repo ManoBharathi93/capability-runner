@@ -80,7 +80,7 @@ class ActionGateway:
         except Exception as error:
             code = (
                 str(error)
-                if str(error) in {"STALE_ELEMENT_REF", "TARGET_AMBIGUOUS"}
+                if str(error) in {"STALE_ELEMENT_REF", "UNKNOWN_ELEMENT_REF", "TARGET_AMBIGUOUS"}
                 else "STALE_ELEMENT_REF"
             )
             result = self._result(

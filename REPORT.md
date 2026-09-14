@@ -38,9 +38,11 @@ This separates business intent from labels, frames and page layout. A tenant's
 markup may change while the procedure stays the same.
 
 For an app without a prepared profile, the browser supplies temporary element
-references. A deterministic compiler turns verified observations into durable
-bindings. The model does not write selectors. A package contains the capability,
-application profile and integrity metadata.
+references such as `12:e4`: generation 12, element 4. The observation UUID and
+original frame/node also bind the ref to its session. Old generations fail
+before locator lookup. A deterministic compiler turns verified facts into
+durable bindings and removes temporary refs. The model does not write selectors.
+A package contains the capability, application profile and integrity metadata.
 
 The cost is that the capability and profile must remain compatible. Generated
 names can also be hard to read. A successful trace supports what was observed;
@@ -58,6 +60,15 @@ balance from the wrong member may be repeated to a customer or used in a later
 decision. A clear failure can be investigated. I therefore require matching
 member identity, the requested account type and valid outputs before reporting
 success. Merely reaching a page with a balance is insufficient.
+
+I chose fresh observation after meaningful state transitions instead of bulk action execution because false progress is more dangerous here than an extra model call.
+
+After bounded load and DOM-stability waits, Discovery issues a new generation.
+A small delta compares normalized controls, text and headings. Stable fingerprints
+exclude observation IDs and recognizable clocks/UUIDs; two successive unchanged
+observations stop generic Discovery. The current snapshot remains authoritative.
+The [hardening acceptance](evidence/surface-observation/README.md) records five
+real-provider calls and different-input Replay with independently checked outputs.
 
 Retries are narrow. A slow observation may be repeated within a declared limit.
 An action with an uncertain effect is never automatically retried: the first
@@ -78,9 +89,11 @@ and semantic actions. A future desktop adapter could implement that contract wit
 OS accessibility or vision. No desktop adapter has been built.
 
 CoreBank and LegacyBank B have both completed real-provider Discovery and fresh
-Replay. Supported controls include ordinary visible HTML inputs, links, buttons
-and result tables, with bounded same-origin frame support. Ambiguous, stale or
-unsupported targets fail. The [browser scope](docs/submission/generic-browser-scope.md)
+Replay. Perception combines ARIA/native semantics with bounded visible DOM context,
+including labels, forms and table rows in named same-origin frames. Source tags
+describe actual inputs, not a full accessibility tree. Ambiguous, stale or
+unsupported targets fail. A future vision producer could supply normalized facts;
+no vision runtime exists. The [browser scope](docs/submission/generic-browser-scope.md)
 lists the limits.
 
 Tenant reuse is a design goal: keep one workflow and supply narrow, reviewed
@@ -126,9 +139,11 @@ Allowlisted applications, routes and action types constrain automation. Unknown
 actions are denied; configured risky actions require approval. The read-only
 sandbox has a narrow allowance for its known search POST route.
 
-Artifacts use parameter references. Evidence redacts configured sensitive keys,
-secret wrappers and known runtime values before writing. Published screenshots
-use reviewed synthetic data. Preview frames are transient.
+Artifacts use parameter references. Observations cap elements, text and serialized
+size; model context masks runtime IDs and recognizable credentials. Evidence
+stores change counts and fingerprints, not raw observations or accessibility trees.
+It redacts configured sensitive keys, secret wrappers and known runtime values.
+Published screenshots use reviewed synthetic data. Preview frames are transient.
 
 These controls have limits. Physical human input bypasses gateway policy, and the
 person must stop interacting after handback. The local HTTP UI has no production

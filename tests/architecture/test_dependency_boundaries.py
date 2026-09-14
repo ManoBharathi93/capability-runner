@@ -108,6 +108,22 @@ def test_production_imports_follow_dependency_rules() -> None:
             ):
                 violations.append(f"{relative}: browser adapter imports model layer {import_name}")
 
+            if relative in {
+                "surfaces/browser_observation.py",
+                "surfaces/browser_surface_adapter.py",
+            } and (
+                imported_subsystem == "application"
+                or vendor_root in {"demo_app", "anthropic", "openai", "gemma"}
+            ):
+                violations.append(
+                    f"{relative}: perception imports application/provider {import_name}"
+                )
+
+            if subsystem == "discovery" and import_name == (
+                "capability_runner.surfaces.browser_surface_adapter"
+            ):
+                violations.append(f"{relative}: Discovery imports concrete browser adapter")
+
             if relative == "discovery/discovery_engine.py" and import_name.startswith(
                 "capability_runner.discovery.providers"
             ):
@@ -276,8 +292,7 @@ def test_replay_continuation_is_model_free_and_does_not_dispatch_directly() -> N
     ]
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     if any(
-        isinstance(node, ast.Attribute) and node.attr == "perform_action"
-        for node in ast.walk(tree)
+        isinstance(node, ast.Attribute) and node.attr == "perform_action" for node in ast.walk(tree)
     ):
         violations.append("application/run_coordinator.py: direct perform_action call")
 
@@ -306,14 +321,27 @@ def test_package_initializers_contain_no_executable_statements() -> None:
 
 
 def test_generic_observation_discovery_and_compiler_have_no_demo_knowledge() -> None:
-    paths = [PACKAGE_ROOT / name for name in (
-        "discovery/discovery_engine.py", "discovery/browser_discovery.py",
-        "capabilities/binding_compiler.py", "surfaces/browser_surface_adapter.py",
-        "surfaces/browser_observation.py",
-    )]
+    paths = [
+        PACKAGE_ROOT / name
+        for name in (
+            "discovery/discovery_engine.py",
+            "discovery/browser_discovery.py",
+            "capabilities/binding_compiler.py",
+            "surfaces/browser_surface_adapter.py",
+            "surfaces/browser_observation.py",
+        )
+    ]
     for path in paths:
         source = path.read_text(encoding="utf-8").casefold()
-        for forbidden in ("corebank", "legacybank", "demo_app", "lookup_savings_balance",
-                          "member.search", "member.results", "member.accounts", "savings"):
+        for forbidden in (
+            "corebank",
+            "legacybank",
+            "demo_app",
+            "lookup_savings_balance",
+            "member.search",
+            "member.results",
+            "member.accounts",
+            "savings",
+        ):
             assert forbidden not in source, (path.name, forbidden)
         assert "perform_action" not in source or path.name == "browser_surface_adapter.py"

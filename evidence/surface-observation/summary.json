@@ -1,0 +1,141 @@
+{
+  "passed": true,
+  "provider": "gemma",
+  "discovery_run_id": "discovery-db8999f1c8384adea7296888389628ae",
+  "discovery_status": "SUCCESS",
+  "discovery_reason": "COMPLETED",
+  "discovery_model_calls": 5,
+  "observations": [
+    {
+      "generation": 2,
+      "element_count": 5,
+      "model_characters": 2265,
+      "model_bytes": 2265,
+      "truncated": false,
+      "change_summary": {
+        "previous_generation": 1,
+        "current_generation": 2,
+        "added_count": 0,
+        "removed_count": 0,
+        "changed_count": 0,
+        "headings_changed": false,
+        "meaningful_text_changed": false,
+        "page_identity_changed": false,
+        "meaningful_change": false
+      },
+      "decision_kind": "fill",
+      "reference_count": 1,
+      "current_refs_only": true,
+      "observation_id_matches": true
+    },
+    {
+      "generation": 3,
+      "element_count": 5,
+      "model_characters": 2347,
+      "model_bytes": 2347,
+      "truncated": false,
+      "change_summary": {
+        "previous_generation": 2,
+        "current_generation": 3,
+        "added_count": 0,
+        "removed_count": 0,
+        "changed_count": 1,
+        "headings_changed": false,
+        "meaningful_text_changed": false,
+        "page_identity_changed": false,
+        "meaningful_change": true
+      },
+      "decision_kind": "click",
+      "reference_count": 1,
+      "current_refs_only": true,
+      "observation_id_matches": true
+    },
+    {
+      "generation": 4,
+      "element_count": 7,
+      "model_characters": 3280,
+      "model_bytes": 3280,
+      "truncated": false,
+      "change_summary": {
+        "previous_generation": 3,
+        "current_generation": 4,
+        "added_count": 4,
+        "removed_count": 2,
+        "changed_count": 0,
+        "headings_changed": true,
+        "meaningful_text_changed": true,
+        "page_identity_changed": false,
+        "meaningful_change": true
+      },
+      "decision_kind": "click",
+      "reference_count": 1,
+      "current_refs_only": true,
+      "observation_id_matches": true
+    },
+    {
+      "generation": 5,
+      "element_count": 11,
+      "model_characters": 4546,
+      "model_bytes": 4546,
+      "truncated": false,
+      "change_summary": {
+        "previous_generation": 4,
+        "current_generation": 5,
+        "added_count": 6,
+        "removed_count": 2,
+        "changed_count": 2,
+        "headings_changed": true,
+        "meaningful_text_changed": true,
+        "page_identity_changed": false,
+        "meaningful_change": true
+      },
+      "decision_kind": "click",
+      "reference_count": 1,
+      "current_refs_only": true,
+      "observation_id_matches": true
+    },
+    {
+      "generation": 6,
+      "element_count": 7,
+      "model_characters": 3235,
+      "model_bytes": 3235,
+      "truncated": false,
+      "change_summary": {
+        "previous_generation": 5,
+        "current_generation": 6,
+        "added_count": 3,
+        "removed_count": 7,
+        "changed_count": 0,
+        "headings_changed": true,
+        "meaningful_text_changed": true,
+        "page_identity_changed": false,
+        "meaningful_change": true
+      },
+      "decision_kind": "complete",
+      "reference_count": 5,
+      "current_refs_only": true,
+      "observation_id_matches": true
+    }
+  ],
+  "replay": {
+    "outcome": "SUCCESS",
+    "run_id": "replay-6a42d14efc6a43c3a054921523f48ed1",
+    "outputs": {
+      "balance_minor_units": 438221,
+      "currency": "USD"
+    },
+    "business_outcome_code": null,
+    "reason_code": null,
+    "step_id": null,
+    "summary": "Declared success conditions were met.",
+    "steps_attempted": 4,
+    "checkpoint": null,
+    "replay_model_calls": 0,
+    "fresh_browser": true
+  },
+  "expected_outputs": {
+    "balance_minor_units": 438221,
+    "currency": "USD"
+  },
+  "model_calls_after_replay": 5
+}

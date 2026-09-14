@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "identity": {
+    "origin": "http://127.0.0.1:55434",
+    "entry_path": "/",
+    "title": "Northstar Member Services",
+    "fingerprint": "41d5f001c2db37870bae9efb56cf922d5d3120edb00b966b256537f8100defb1",
+    "profile_version": 1
+  },
+  "binding_evidence": [
+    {
+      "target": "page.x28adf875.member_id",
+      "observation_fingerprint": "4841b8728c88252585a64add0098cb4b2535137c2db419925fe2e2c68b8ba220",
+      "unique_match_count": 1,
+      "re_resolved": true
+    },
+    {
+      "target": "page.xbc7ddcb6.search",
+      "observation_fingerprint": "9ace74a69bce7029dba0feb46b929c264a8d834fb2720889cc0f52e1d1f10c23",
+      "unique_match_count": 1,
+      "re_resolved": true
+    },
+    {
+      "target": "page.x2cbb40b8.open",
+      "observation_fingerprint": "a72055c61b1a495c496ba38842861831995b2d988bdada29031f3a27ff35f2e3",
+      "unique_match_count": 1,
+      "re_resolved": true
+    },
+    {
+      "target": "page.x7d4ff084.open",
+      "observation_fingerprint": "e81b91ba50d741d7fdd269dba85b4749c992519445e15ae12b5b8cc7529e9d21",
+      "unique_match_count": 1,
+      "re_resolved": true
+    },
+    {
+      "target": "page.xb847800c.account_type",
+      "observation_fingerprint": "650fde48c0e41dd18621ae49df887f207420a3674f8e832f49df946a01824238",
+      "unique_match_count": 1,
+      "re_resolved": true
+    },
+    {
+      "target": "page.xb614a083.current_balance",
+      "observation_fingerprint": "4a64a0fa23e724da39ba708de2e98743dc1155db1b44f91cff300d9872b32977",
+      "unique_match_count": 1,
+      "re_resolved": true
+    },
+    {
+      "target": "page.xf5119c35.member_id",
+      "observation_fingerprint": "e7f4c1497892c7e5be0be1517bd4a24548c0017dfe7214749f0e040e7d0f4e01",
+      "unique_match_count": 1,
+      "re_resolved": true
+    }
+  ],
+  "entry_point": "http://127.0.0.1:55434/",
+  "sha256": {
+    "capability.json": "be1e18bfdad73a9a0eed8e1c74e8e0768477f1b429810af6be66482d17a5598a",
+    "application-profile.json": "875f5031d5edb10508d4de5904cae141dfa15d0e9d097f27087c8d931a4809ac"
+  }
+}

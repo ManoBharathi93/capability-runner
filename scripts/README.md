@@ -1,5 +1,11 @@
 # Developer scripts
 
+- `verify_surface_observations.py --live`: isolated real-provider generic Discovery,
+  safe generation/reference metadata, then different-input Replay checked against
+  fixed expected values. Writes only to `var/` by default; no frontend is required.
+- `measure_surface_observations.py var/observation-size.json`: measures three
+  synthetic pages without a model. Reports characters and bytes, not token counts.
+
 - `verify_login_handoff.py`: isolated headed synthetic sign-in, fresh validation
   and model-free lookup in the same browser. Uses automated input, never physical
   acceptance. Updates `evidence/login-handoff/` and three reviewer screenshots.

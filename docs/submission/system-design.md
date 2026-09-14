@@ -33,6 +33,24 @@ Both use the same checks before automated actions reach the browser.
 
 See the [repository map](../repository-map.md) for source locations.
 
+## How a current page becomes a safe action target
+
+The browser adapter reads ARIA/native semantics and adds bounded visible DOM
+context: labels, form names, table rows and named frames. The normalized view
+marks which sources contributed. Future vision can enter at this data seam;
+no vision producer runs today.
+
+Discovery receives the current view and a small change summary. It proposes
+one action against a ref such as `12:e4`. The gateway checks the observation UUID,
+generation, original node, ownership and policy before dispatch. New observations,
+navigation and DOM changes invalidate old refs. They cannot become permissions.
+
+After an action, bounded load and DOM-stability waits precede a new view. The
+delta explains changes; it cannot substitute for current evidence. Two successive
+unchanged fingerprints stop generic Discovery. The compiler strips temporary
+refs from saved bindings, so Replay continues to use semantic targets and stable
+locators without model decisions. See [measured evidence](../../evidence/surface-observation/README.md).
+
 ## Architecture concept images
 
 These are early design illustrations, not execution evidence. Labels such as

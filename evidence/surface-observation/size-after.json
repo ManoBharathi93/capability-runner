@@ -1,0 +1,29 @@
+[
+  {
+    "page": "search",
+    "normalized_characters": 4883,
+    "model_characters": 2014,
+    "model_bytes": 2014,
+    "elements": 5,
+    "interactive_elements": 5,
+    "text_characters": 53
+  },
+  {
+    "page": "details",
+    "normalized_characters": 11412,
+    "model_characters": 4278,
+    "model_bytes": 4278,
+    "elements": 11,
+    "interactive_elements": 6,
+    "text_characters": 202
+  },
+  {
+    "page": "account",
+    "normalized_characters": 6814,
+    "model_characters": 2889,
+    "model_bytes": 2889,
+    "elements": 7,
+    "interactive_elements": 4,
+    "text_characters": 105
+  }
+]

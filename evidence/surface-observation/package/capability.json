@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "capability_id": "workflow_a7296888389628ae",
+  "capability_version": "1.0.0",
+  "name": "Discovered balance minor units / currency",
+  "description": "Observed browser workflow with grounded output and identity checkpoints.",
+  "application_requirement": {
+    "application_family": "web_41d5f001c2db3787",
+    "surface_kind": "browser",
+    "compatible_variant": null
+  },
+  "inputs": [
+    {
+      "name": "member_id",
+      "value_type": "STRING",
+      "required": true,
+      "sensitive": true,
+      "min_length": null,
+      "max_length": null,
+      "pattern": null
+    }
+  ],
+  "outputs": [
+    {
+      "name": "balance_minor_units",
+      "value_type": "INTEGER",
+      "source": {
+        "kind": "target_text",
+        "target": {
+          "value": "page.xb614a083.current_balance"
+        },
+        "parser": "currency_minor_units"
+      }
+    },
+    {
+      "name": "currency",
+      "value_type": "CURRENCY_CODE",
+      "source": {
+        "kind": "target_text",
+        "target": {
+          "value": "page.xb614a083.current_balance"
+        },
+        "parser": "currency_code"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "kind": "action",
+      "step_id": "fill_page_x28adf875_member_id",
+      "action": {
+        "kind": "fill",
+        "target": {
+          "value": "page.x28adf875.member_id"
+        },
+        "value": {
+          "kind": "input",
+          "name": "member_id"
+        }
+      },
+      "precondition": null,
+      "postcondition": null,
+      "retry_policy": null
+    },
+    {
+      "kind": "action",
+      "step_id": "click_page_xbc7ddcb6_search",
+      "action": {
+        "kind": "click",
+        "target": {
+          "value": "page.xbc7ddcb6.search"
+        }
+      },
+      "precondition": null,
+      "postcondition": null,
+      "retry_policy": null
+    },
+    {
+      "kind": "action",
+      "step_id": "click_page_x2cbb40b8_open",
+      "action": {
+        "kind": "click",
+        "target": {
+          "value": "page.x2cbb40b8.open"
+        }
+      },
+      "precondition": null,
+      "postcondition": null,
+      "retry_policy": null
+    },
+    {
+      "kind": "action",
+      "step_id": "click_page_x7d4ff084_open",
+      "action": {
+        "kind": "click",
+        "target": {
+          "value": "page.x7d4ff084.open"
+        }
+      },
+      "precondition": null,
+      "postcondition": null,
+      "retry_policy": null
+    }
+  ],
+  "success_conditions": [
+    {
+      "kind": "target_text_equals",
+      "target": {
+        "value": "page.xf5119c35.member_id"
+      },
+      "expected": {
+        "kind": "input",
+        "name": "member_id"
+      }
+    },
+    {
+      "kind": "target_text_equals",
+      "target": {
+        "value": "page.xb847800c.account_type"
+      },
+      "expected": {
+        "kind": "literal",
+        "value": "Savings"
+      }
+    },
+    {
+      "kind": "target_visible",
+      "target": {
+        "value": "page.xb614a083.current_balance"
+      }
+    }
+  ],
+  "business_outcomes": []
+}
